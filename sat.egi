@@ -29,6 +29,7 @@
 (define $literal
   (matcher {[<p $> [nat] {[<Pos $x> {x}] [_ {}]}]
             [<n $> [nat] {[<Neg $x> {x}] [_ {}]}]
+            [,$l [] {[$tgt (if (eq? tgt l) {[]} {})]}]
             [$ [something] {[$tgt {tgt}]}]}))
 
 (define $eval-literal
@@ -68,12 +69,30 @@
     (match-all cnf (set (set literal))
       [<cons (& $cls !<cons <n ,var> _>) _> (delete <Pos var> cls)])))
 
+(define $delete-literal
+  (lambda [$lit $cnf $vars]
+    (match lit literal
+      {[<p $x> [(allocate-true cnf x) (delete x vars)]]
+       [<n $x> [(allocate-false cnf x) (delete x vars)]]})))
+
+(define $exist?
+  (lambda [$lit $cnf]
+    (match cnf (multiset (multiset literal))
+      {[<cons <cons ,lit _> _> #t]
+       [_ #f]})))
+
 (define $sat
   (lambda [$cnf $vars]
-    (match cnf (set (set literal))
-      {[<cons <nil> _> #f]
-       [_ (match vars (multiset something)
-            {[<nil> #t]
+    (match cnf (multiset (multiset literal))
+      {[<nil> #t]
+       [<cons <nil> _> #f]
+       [<cons <cons $lit <nil>> _> (sat (delete-literal lit cnf vars))]
+       [_ (match vars (multiset integer)
+            {[<nil> "Error"]
+             [<cons (& $x !?(lambda [$x] (exist? <Pos x> cnf))) $xs>
+              (sat (delete-literal <Neg x> cnf vars))]
+             [<cons (& $x !?(lambda [$x] (exist? <Neg x> cnf))) $xs>
+              (sat (delete-literal <Pos x> cnf vars))]
              [<cons $x $xs>
               (or (sat (allocate-true cnf x) xs)
                   (sat (allocate-false cnf x) xs))]})]})))
@@ -84,7 +103,5 @@
   {1 2})
 (define $sample-all1-2
   {1})
-;; (eval-cnf sample-all1-1 sample-cnf1)
-;; (eval-cnf sample-all1-2 sample-cnf1)
 (define $sample-cnf2
   {{<Pos 1> <Pos 2>} {<Neg 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}})
