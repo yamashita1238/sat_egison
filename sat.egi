@@ -52,12 +52,31 @@
                            {[,<T> (eval-cnf all rst)]
                             [,<F> <F>]})]})))
 
-(define $sat
-  (lambda [$n $cnf] ; n is the number of variables in cnf
-    (let {[$vars (between 1 n)]}
-      (match-all vars (multiset integer)
-        [<join (& $all ?(lambda [$all] (eq? (eval-cnf all cnf) <T>))) _> all]))))
+;; (define $sat
+;;   (lambda [$n $cnf] ; n is the number of variables in cnf
+;;     (let {[$vars (between 1 n)]}
+;;       (match-all vars (multiset integer)
+;;         [<join (& $all ?(lambda [$all] (eq? (eval-cnf all cnf) <T>))) _> all]))))
 
+(define $allocate-true
+  (lambda [$cnf $var]
+    (match-all cnf (set (set literal))
+      [<cons (& $cls !<cons <p ,var> _>) _> (delete <Neg var> cls)])))
+
+(define $allocate-false
+  (lambda [$cnf $var]
+    (match-all cnf (set (set literal))
+      [<cons (& $cls !<cons <n ,var> _>) _> (delete <Pos var> cls)])))
+
+(define $sat
+  (lambda [$cnf $vars]
+    (match cnf (set (set literal))
+      {[<cons <nil> _> #f]
+       [_ (match vars (multiset something)
+            {[<nil> #t]
+             [<cons $x $xs>
+              (or (sat (allocate-true cnf x) xs)
+                  (sat (allocate-false cnf x) xs))]})]})))
 
 (define $sample-cnf1
   {{<Pos 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}})
@@ -67,5 +86,5 @@
   {1})
 ;; (eval-cnf sample-all1-1 sample-cnf1)
 ;; (eval-cnf sample-all1-2 sample-cnf1)
-
-(sat 2 sample-cnf1)
+(define $sample-cnf2
+  {{<Pos 1> <Pos 2>} {<Neg 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}})
