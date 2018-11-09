@@ -1,0 +1,71 @@
+(define $x 5)
+
+(define $my-multiset
+  (lambda [$a]
+    (matcher
+      {[<nil> [] {[{} {[]}] [_ {}]}]
+       [<cons $ $> [a (my-multiset a)]
+        {[$tgt (match-all tgt (list a)
+                 [<join $hs <cons $x $ts>> [x (append hs ts)]])]}]
+       [,$val []
+        {[$tgt (match [val tgt] [(list a) (my-multiset a)]
+                {[[<nil> <nil>] {[]}]
+                 [[<cons $x $xs> <cons ,x ,xs>] {[]}]
+                 [[_ _] {}]})]}]
+       [$ [something] {[$tgt {tgt}]}]})))
+
+(define $mem?
+  (lambda [$xs $x]
+    (match xs (set something) {[<cons ,x _> #t] [_ #f]})))
+
+(define $all-ref
+  (lambda [$all $var]
+    (if (mem? all var) <T> <F>)))
+
+(define $neg
+  (lambda [$val]
+    (match val something {[,<T> <F>] [,<F> <T>]})))
+
+(define $literal
+  (matcher {[<p $> [nat] {[<Pos $x> {x}] [_ {}]}]
+            [<n $> [nat] {[<Neg $x> {x}] [_ {}]}]
+            [$ [something] {[$tgt {tgt}]}]}))
+
+(define $eval-literal
+  (lambda [$all $lit]
+    (match lit literal {[<p $var> (all-ref all var)]
+                        [<n $var> (neg (all-ref all var))]})))
+
+(define $eval-cls
+  (lambda [$all $cls]
+    (match cls (list something)
+      {[<nil> <F>]
+       [<cons $lit $rst> (match (eval-literal all lit) something
+                           {[,<T> <T>]
+                            [,<F> (eval-cls all rst)]})]})))
+
+(define $eval-cnf
+  (lambda [$all $cnf]
+    (match cnf (list something)
+      {[<nil> <T>]
+       [<cons $cls $rst> (match (eval-cls all cls) something
+                           {[,<T> (eval-cnf all rst)]
+                            [,<F> <F>]})]})))
+
+(define $sat
+  (lambda [$n $cnf] ; n is the number of variables in cnf
+    (let {[$vars (between 1 n)]}
+      (match-all vars (multiset integer)
+        [<join (& $all ?(lambda [$all] (eq? (eval-cnf all cnf) <T>))) _> all]))))
+
+
+(define $sample-cnf1
+  {{<Pos 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}})
+(define $sample-all1-1
+  {1 2})
+(define $sample-all1-2
+  {1})
+;; (eval-cnf sample-all1-1 sample-cnf1)
+;; (eval-cnf sample-all1-2 sample-cnf1)
+
+(sat 2 sample-cnf1)
