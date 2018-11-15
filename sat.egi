@@ -18,9 +18,9 @@
   (lambda [$xs $x]
     (match xs (set something) {[<cons ,x _> #t] [_ #f]})))
 
-(define $all-ref
-  (lambda [$all $var]
-    (if (mem? all var) <T> <F>)))
+(define $alc-ref
+  (lambda [$alc $var]
+    (if (mem? alc var) <T> <F>)))
 
 (define $neg
   (lambda [$val]
@@ -33,31 +33,31 @@
             [$ [something] {[$tgt {tgt}]}]}))
 
 (define $eval-literal
-  (lambda [$all $lit]
-    (match lit literal {[<p $var> (all-ref all var)]
-                        [<n $var> (neg (all-ref all var))]})))
+  (lambda [$alc $lit]
+    (match lit literal {[<p $var> (alc-ref alc var)]
+                        [<n $var> (neg (alc-ref alc var))]})))
 
 (define $eval-cls
-  (lambda [$all $cls]
+  (lambda [$alc $cls]
     (match cls (list something)
       {[<nil> <F>]
-       [<cons $lit $rst> (match (eval-literal all lit) something
+       [<cons $lit $rst> (match (eval-literal alc lit) something
                            {[,<T> <T>]
-                            [,<F> (eval-cls all rst)]})]})))
+                            [,<F> (eval-cls alc rst)]})]})))
 
 (define $eval-cnf
-  (lambda [$all $cnf]
+  (lambda [$alc $cnf]
     (match cnf (list something)
       {[<nil> <T>]
-       [<cons $cls $rst> (match (eval-cls all cls) something
-                           {[,<T> (eval-cnf all rst)]
+       [<cons $cls $rst> (match (eval-cls alc cls) something
+                           {[,<T> (eval-cnf alc rst)]
                             [,<F> <F>]})]})))
 
 ;; (define $sat
 ;;   (lambda [$n $cnf] ; n is the number of variables in cnf
 ;;     (let {[$vars (between 1 n)]}
 ;;       (match-all vars (multiset integer)
-;;         [<join (& $all ?(lambda [$all] (eq? (eval-cnf all cnf) <T>))) _> all]))))
+;;         [<join (& $alc ?(lambda [$alc] (eq? (eval-cnf alc cnf) <T>))) _> alc]))))
 
 (define $allocate-true
   (lambda [$cnf $var]
@@ -82,7 +82,7 @@
        [_ #f]})))
 
 (define $sat
-  (lambda [$cnf $vars]
+  (lambda [$cnf $vars $alc]
     (match cnf (multiset (multiset literal))
       {[<nil> #t]
        [<cons <nil> _> #f]
@@ -99,9 +99,39 @@
 
 (define $sample-cnf1
   {{<Pos 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}})
-(define $sample-all1-1
+(define $sample-alc1-1
   {1 2})
-(define $sample-all1-2
+(define $sample-alc1-2
   {1})
 (define $sample-cnf2
   {{<Pos 1> <Pos 2>} {<Neg 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}})
+
+(define $read-comment
+  (lambda [$port]
+    (do {[$c (read-char-from-port port)]
+         (write "c: ")
+         (write (show c))
+         (write "\n")}
+      (match c char
+        {[,'c' (do {(read-line-from-port port)} (read-comment port))]
+         [_ (return [])]}))))
+
+;; (define $read-header
+;;   (lambda [$port]
+;;     (
+
+(define $read-DIMACS
+  (lambda [$port]
+    (do {(read-comment port)
+        [$n (read-header port)]
+        [$cnf (read-body port)]}
+      [n cnf])))
+
+(define $main
+  (lambda [$args]
+    (do {[$inport (open-input-file "./input.txt")]
+         (read-comment inport)
+         [$c (read-line-from-port inport)]
+         (write (show c))
+         (close-input-port inport)}
+      (return 0))))
