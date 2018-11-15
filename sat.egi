@@ -29,7 +29,7 @@
 
 (define $eval-cls
   (lambda [$alc $cls]
-    (match cls (list something)
+    (match cls (list literal)
       {[<nil> <F>]
        [<cons $lit $rst> (match (eval-literal alc lit) something
                            {[,<T> <T>]
@@ -66,7 +66,7 @@
        [_ #f]})))
 
 (define $answer
-  (matcher {[<sat $> [(set Integer)] {[<SAT $alc> {[alc]}] [<UNSAT> {}]}]
+  (matcher {[<sat $> [(set nat)] {[<SAT $alc> {[alc]}] [<UNSAT> {}]}]
             [<unsat> [] {[<SAT $alc> {}] [<UNSAT> {[]}]}]
             [$ [something] {[$tgt {[tgt]}]}]}))
 
@@ -76,21 +76,30 @@
       {[<sat $alc> <SAT (cons x alc)>]
        [<unsat> <UNSAT>]})))
 
+(define $enumerate-vars
+  (lambda [$cnf]
+    (unique (match-all cnf (multiset (multiset literal))
+      [<cons <cons $lit _> _> (var-of-literal lit)]))))
+
 (define $sat
-  (lambda [$cnf $vars $alc]
-    (match [vars cnf] [(multiset integer) (multiset (multiset literal))]
-      {[[_ <nil>] <SAT alc>]
-       [[_ <cons <nil> _>] <UNSAT>]
-       [[_ <cons <cons $lit <nil>> _>] (sat (delete-literal lit cnf vars alc))]
-       [[<nil> _] "Error"]
-       [[<cons $x _> !<cons <cons ,<Pos x> _> _>]
-        (sat (delete-literal <Neg x> cnf vars alc))]
-       [[<cons $x _> !<cons <cons ,<Neg x> _> _>]
-        (sat (delete-literal <Pos x> cnf vars alc))]
-       [[<cons $x $xs> _]
-        (match (sat (allocate-true cnf x) xs (cons x alc)) answer
-          {[(& <sat _> $ans) ans]
-           [<unsat> (sat (allocate-false cnf x) xs alc)]})]})))
+  (letrec
+    {[$sat-body
+      (lambda [$cnf $vars $alc]
+        (match [vars cnf] [(multiset integer) (multiset (multiset literal))]
+          {[[_ <nil>] <SAT alc>]
+           [[_ <cons <nil> _>] <UNSAT>]
+           [[_ <cons <cons $lit <nil>> _>] (sat-body (delete-literal lit cnf vars alc))]
+           [[<nil> _] "Error"]
+           [[<cons $x _> !<cons <cons ,<Pos x> _> _>]
+            (sat-body (delete-literal <Neg x> cnf vars alc))]
+           [[<cons $x _> !<cons <cons ,<Neg x> _> _>]
+            (sat-body (delete-literal <Pos x> cnf vars alc))]
+           [[<cons $x $xs> _]
+            (match (sat-body (allocate-true cnf x) xs (cons x alc)) answer
+              {[(& <sat _> $ans) ans]
+               [<unsat> (sat-body (allocate-false cnf x) xs alc)]})]}))]}
+    (lambda [$cnf] (sat-body cnf (enumerate-vars cnf) {}))))
+  
 
 (define $sample-cnf1
   {{<Pos 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}})
