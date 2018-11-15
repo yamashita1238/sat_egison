@@ -16,6 +16,12 @@
             [,$l [] {[$tgt (if (eq? tgt l) {[]} {})]}]
             [$ [something] {[$tgt {tgt}]}]}))
 
+(define $var-of-literal
+  (lambda [$lit]
+    (match lit literal
+      {[<p $x> x]
+       [<n $x> x]})))
+
 (define $eval-literal
   (lambda [$alc $lit]
     (match lit literal {[<p $var> (alc-ref alc var)]
