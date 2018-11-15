@@ -37,12 +37,6 @@
                            {[,<T> (eval-cnf alc rst)]
                             [,<F> <F>]})]})))
 
-;; (define $sat
-;;   (lambda [$n $cnf] ; n is the number of variables in cnf
-;;     (let {[$vars (between 1 n)]}
-;;       (match-all vars (multiset integer)
-;;         [<join (& $alc ?(lambda [$alc] (eq? (eval-cnf alc cnf) <T>))) _> alc]))))
-
 (define $allocate-true
   (lambda [$cnf $var]
     (match-all cnf (set (set literal))
