@@ -94,20 +94,19 @@
 
 (define $sat
   (lambda [$cnf $vars $alc]
-    (match cnf (multiset (multiset literal))
-      {[<nil> <SAT alc>]
-       [<cons <nil> _> <UNSAT>]
-       [<cons <cons $lit <nil>> _> (sat (delete-literal lit cnf vars alc))]
-       [_ (match vars (multiset integer)
-            {[<nil> "Error"]
-             [<cons (& $x !?(lambda [$x] (exist? <Pos x> cnf))) $xs>
-              (sat (delete-literal <Neg x> cnf vars alc))]
-             [<cons (& $x !?(lambda [$x] (exist? <Neg x> cnf))) $xs>
-              (sat (delete-literal <Pos x> cnf vars alc))]
-             [<cons $x $xs>
-              (match (sat (allocate-true cnf x) xs (cons x alc)) answer
-                {[(& <sat _> $ans) ans]
-                 [<unsat> (sat (allocate-false cnf x) xs alc)]})]})]})))
+    (match [vars cnf] [(multiset integer) (multiset (multiset literal))]
+      {[[_ <nil>] <SAT alc>]
+       [[_ <cons <nil> _>] <UNSAT>]
+       [[_ <cons <cons $lit <nil>> _>] (sat (delete-literal lit cnf vars alc))]
+       [[<nil> _] "Error"]
+       [[<cons $x _> !<cons <cons ,<Pos x> _> _>]
+        (sat (delete-literal <Neg x> cnf vars alc))]
+       [[<cons $x _> !<cons <cons ,<Neg x> _> _>]
+        (sat (delete-literal <Pos x> cnf vars alc))]
+       [[<cons $x $xs> _]
+        (match (sat (allocate-true cnf x) xs (cons x alc)) answer
+          {[(& <sat _> $ans) ans]
+           [<unsat> (sat (allocate-false cnf x) xs alc)]})]})))
 
 (define $sample-cnf1
   {{<Pos 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}})
