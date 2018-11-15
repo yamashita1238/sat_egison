@@ -70,10 +70,10 @@
       [<cons (& $cls !<cons <n ,var> _>) _> (delete <Pos var> cls)])))
 
 (define $delete-literal
-  (lambda [$lit $cnf $vars]
+  (lambda [$lit $cnf $vars $alc]
     (match lit literal
-      {[<p $x> [(allocate-true cnf x) (delete x vars)]]
-       [<n $x> [(allocate-false cnf x) (delete x vars)]]})))
+      {[<p $x> [(allocate-true cnf x) (delete x vars) (cons x alc)]]
+       [<n $x> [(allocate-false cnf x) (delete x vars) alc]]})))
 
 (define $exist?
   (lambda [$lit $cnf]
@@ -81,21 +81,33 @@
       {[<cons <cons ,lit _> _> #t]
        [_ #f]})))
 
+(define $answer
+  (matcher {[<sat $> [(set Integer)] {[<SAT $alc> {[alc]}] [<UNSAT> {}]}]
+            [<unsat> [] {[<SAT $alc> {}] [<UNSAT> {[]}]}]
+            [$ [something] {[$tgt {[tgt]}]}]}))
+
+(define $cons-answer
+  (lambda [$x $res]
+    (match res answer
+      {[<sat $alc> <SAT (cons x alc)>]
+       [<unsat> <UNSAT>]})))
+
 (define $sat
   (lambda [$cnf $vars $alc]
     (match cnf (multiset (multiset literal))
-      {[<nil> #t]
-       [<cons <nil> _> #f]
-       [<cons <cons $lit <nil>> _> (sat (delete-literal lit cnf vars))]
+      {[<nil> <SAT alc>]
+       [<cons <nil> _> <UNSAT>]
+       [<cons <cons $lit <nil>> _> (sat (delete-literal lit cnf vars alc))]
        [_ (match vars (multiset integer)
             {[<nil> "Error"]
              [<cons (& $x !?(lambda [$x] (exist? <Pos x> cnf))) $xs>
-              (sat (delete-literal <Neg x> cnf vars))]
+              (sat (delete-literal <Neg x> cnf vars alc))]
              [<cons (& $x !?(lambda [$x] (exist? <Neg x> cnf))) $xs>
-              (sat (delete-literal <Pos x> cnf vars))]
+              (sat (delete-literal <Pos x> cnf vars alc))]
              [<cons $x $xs>
-              (or (sat (allocate-true cnf x) xs)
-                  (sat (allocate-false cnf x) xs))]})]})))
+              (match (sat (allocate-true cnf x) xs (cons x alc)) answer
+                {[(& <sat _> $ans) ans]
+                 [<unsat> (sat (allocate-false cnf x) xs alc)]})]})]})))
 
 (define $sample-cnf1
   {{<Pos 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}})
