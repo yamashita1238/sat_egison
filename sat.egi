@@ -1,10 +1,8 @@
-(define $mem?
-  (lambda [$xs $x]
-    (match xs (set something) {[<cons ,x _> #t] [_ #f]})))
+;; to comfirm an allocation
 
 (define $alc-ref
   (lambda [$alc $var]
-    (if (mem? alc var) <T> <F>)))
+    (if (member? var alc) <T> <F>)))
 
 (define $neg
   (lambda [$val]
@@ -43,6 +41,8 @@
                            {[,<T> (eval-cnf alc rst)]
                             [,<F> <F>]})]})))
 
+;; to solve sat problem
+
 (define $allocate-true
   (lambda [$cnf $var]
     (match-all cnf (set (set literal))
@@ -70,12 +70,6 @@
             [<unsat> [] {[<SAT $alc> {}] [<UNSAT> {[]}]}]
             [$ [something] {[$tgt {[tgt]}]}]}))
 
-(define $cons-answer
-  (lambda [$x $res]
-    (match res answer
-      {[<sat $alc> <SAT (cons x alc)>]
-       [<unsat> <UNSAT>]})))
-
 (define $enumerate-vars
   (lambda [$cnf]
     (unique (match-all cnf (multiset (multiset literal))
@@ -101,41 +95,12 @@
     (lambda [$cnf] (sat-body cnf (enumerate-vars cnf) {}))))
   
 
+;; sample inputs
+;; A comment shows a possible allocation
+
 (define $sample-cnf1
-  {{<Pos 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}})
-(define $sample-alc1-1
-  {1 2})
-(define $sample-alc1-2
-  {1})
+  {{<Pos 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}}) ; 1 = T, 2 = F
 (define $sample-cnf2
-  {{<Pos 1> <Pos 2>} {<Neg 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}})
+  {{<Pos 1> <Pos 2>} {<Neg 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}}) ; UNSATISFIABLE
 
-(define $read-comment
-  (lambda [$port]
-    (do {[$c (read-char-from-port port)]
-         (write "c: ")
-         (write (show c))
-         (write "\n")}
-      (match c char
-        {[,'c' (do {(read-line-from-port port)} (read-comment port))]
-         [_ (return [])]}))))
 
-;; (define $read-header
-;;   (lambda [$port]
-;;     (
-
-(define $read-DIMACS
-  (lambda [$port]
-    (do {(read-comment port)
-        [$n (read-header port)]
-        [$cnf (read-body port)]}
-      [n cnf])))
-
-(define $main
-  (lambda [$args]
-    (do {[$inport (open-input-file "./input.txt")]
-         (read-comment inport)
-         [$c (read-line-from-port inport)]
-         (write (show c))
-         (close-input-port inport)}
-      (return 0))))
