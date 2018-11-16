@@ -5,26 +5,19 @@
             [,$x [] {[$tgt (if (eq? tgt x) {[]} {})]}]
             [$ [something] {[$tgt {tgt}]}]}))
 
-(define $literal
-  (matcher {[<p $> [nat] {[$x (if (lt? 0 x) {x} {})]}]
-            [<n $> [nat] {[$x (if (lt? x 0) {(neg x)} {})]}]
-            [,$l [] {[$tgt (if (eq? tgt l) {[]} {})]}]
-            [$ [something] {[$tgt {tgt}]}]}))
-
 (define $eval-literal
   (lambda [$alc $lit]
-    (match lit literal {[<p $var> (member? var alc)]
-                        [<n $var> (not (member? var alc))]})))
+    (member? lit alc)))
 
 (define $eval-cls
   (lambda [$alc $cls]
-    (match cls (list literal)
+    (match cls (list integer)
       {[<nil> #f]
        [<cons $lit $rst> (or (eval-literal alc lit) (eval-cls alc rst))]})))
 
 (define $eval-cnf
   (lambda [$alc $cnf]
-    (match cnf (list (list literal))
+    (match cnf (list (list integer))
       {[<nil> #t]
        [<cons $cls $rst> (and (eval-cls alc cls) (eval-cnf alc rst))]})))
 
@@ -43,7 +36,7 @@
 
 (define $allocate-help
   (lambda [$cnf $lit]
-    (match-all cnf (set (set literal))
+    (match-all cnf (set (set integer))
       [<cons (& $cls !<cons ,lit _>) _> (delete (neg lit) cls)])))
 
 (define $allocate
@@ -52,7 +45,7 @@
 
 (define $delete-tautology
   (lambda [$cnf]
-    (match cnf (list (multiset literal))
+    (match cnf (list (multiset integer))
       {[<cons <cons $lit <cons ,lit $cls>> $tail>
         (delete-tautology (cons (cons lit cls) tail))]
        [<cons <cons $lit <cons ,(neg lit) _>> $tail>
@@ -68,7 +61,7 @@
   (letrec
     {[$sat-body
       (lambda [$cnf $vars $alc]
-        (match [vars cnf] [(multiset variable) (multiset (multiset literal))]
+        (match [vars cnf] [(multiset variable) (multiset (multiset integer))]
           {[[_ <nil>] <SAT alc>]
            [[_ <cons <nil> _>] <UNSAT>]
            [[_ <cons <cons $lit <nil>> _>] (sat-body (allocate lit cnf vars alc))]
