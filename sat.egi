@@ -14,10 +14,6 @@
             [,$l [] {[$tgt (if (eq? tgt l) {[]} {})]}]
             [$ [something] {[$tgt {tgt}]}]}))
 
-(define $flip-literal
-  (lambda [$lit]
-    (neg lit)))
-
 (define $var-of-literal
   (lambda [$lit]
     (abs lit)))
