@@ -24,11 +24,16 @@
 
 (define $eval-cnf
   (lambda [$alc $cnf]
-    (match cnf (list something)
+    (match cnf (list (list literal))
       {[<nil> #t]
        [<cons $cls $rst> (and (eval-cls alc cls) (eval-cnf alc rst))]})))
 
 ;; to solve sat problem
+
+(define $answer
+  (matcher {[<sat $> [(set nat)] {[<SAT $alc> {[alc]}] [<UNSAT> {}]}]
+            [<unsat> [] {[<SAT $alc> {}] [<UNSAT> {[]}]}]
+            [$ [something] {[$tgt {[tgt]}]}]}))
 
 (define $mor
   (lambda [$x $y]
@@ -44,16 +49,6 @@
 (define $allocate
   (lambda [$lit $cnf $vars $alc]
     [(allocate-help cnf lit) (delete (abs lit) vars) (cons lit alc)]))
-
-(define $answer
-  (matcher {[<sat $> [(set nat)] {[<SAT $alc> {[alc]}] [<UNSAT> {}]}]
-            [<unsat> [] {[<SAT $alc> {}] [<UNSAT> {[]}]}]
-            [$ [something] {[$tgt {[tgt]}]}]}))
-
-(define $enumerate-vars
-  (lambda [$cnf]
-    (unique (match-all cnf (multiset (multiset literal))
-      [<cons <cons $lit _> _> (abs lit)]))))
 
 (define $delete-tautology
   (lambda [$cnf]
@@ -83,10 +78,9 @@
            [[<cons $x _> _]
             (mor (sat-body (allocate x cnf vars alc))
                  (sat-body (allocate (neg x) cnf vars alc)))]}))]}
-    (lambda [$cnf] (sat-body (preprocess cnf) (enumerate-vars cnf) {}))))
+    (lambda [$num-of-var $cnf] (sat-body (preprocess cnf) (take num-of-var nats) {}))))
 
-;; sample inputs
-;; A comment shows a possible allocation
+; generater of random 3-cnf
 
 (define $random-literal
   (lambda [$num-of-var]
@@ -108,7 +102,7 @@
 (define $test-sat
   (lambda [$num-of-var $num-of-cls]
     (let* {[$cnf (random-3cnf num-of-var num-of-cls)]
-           [$res (sat cnf)]
+           [$res (sat num-of-var cnf)]
            [$evl (match res answer
                    {[<sat $alc> (if (eval-cnf alc cnf) "OK" "NG")]
                     [<unsat> "cannot confirm"]})]}
@@ -121,27 +115,31 @@
          }
       (return)))))
 
-;; parser written by Nishiwaki
+;; parser originally written by Nishiwaki
+
+(define $split-line
+  (lambda [$line]
+    (filter (lambda [$s] (not (eq? s ""))) (split-string " " line))))
 
 (define $read-cnf
   (lambda [$fn]
     (io (do {[$port (open-input-file fn)]}
-          (letrec {[$go (lambda [$acc]
+          (letrec {[$go (lambda [$num $acc]
                           (do {[$end? (eof-port? port)]}
                             (if end?
-                              (return (reverse acc))
+                              (return [num (reverse acc)])
                               (do {[$line (read-line-from-port port)]}
-                                (if (or (eq? (S.car line) c#c)
-                                        (eq? (S.car line) c#p))
-                                  (go acc)
-                                  (go (cons (rdc (map read (filter (lambda [$s] (not (eq? s ""))) (split-string " " line)))) acc)))))))]}
-            (go {}))))))
+                                (if (eq? (S.car line) c#c) (go num acc)
+                                  (if (eq? (S.car line) c#p) 
+                                    (go (read (car (cdr (cdr (split-line line))))) acc)
+                                    (go num (cons (rdc (map read (split-line line))) acc))))))))]}
+            (go 0 {}))))))
 
 (define $main
   (match-lambda (list string)
     {[<cons $fn _>
-      (let* {[$cnf (read-cnf fn)]
-             [$res (sat cnf)]
+      (let* {[[$num $cnf] (read-cnf fn)]
+             [$res (sat num cnf)]
              [$con (match res answer
                      {[<sat $alc> (match (eval-cnf alc cnf) something
                                     {[,#t "OK"]
