@@ -57,18 +57,18 @@
 (define $sat
   (letrec
     {[$sat-body
-      (lambda [$cnf $vars $alc]
+      (lambda [$cnf $vars $alc $lvl]
         (match [vars cnf] [(multiset variable) (multiset (multiset integer))]
           {[[_ <nil>] <SAT alc>]
            [[_ <cons <nil> _>] <UNSAT>]
-           [[_ <cons <cons $lit <nil>> _>] (sat-body (allocate lit cnf vars alc))]
+           [[_ <cons <cons $lit <nil>> _>] (sat-body (allocate lit cnf vars alc) lvl)]
            [[<nil> _] "Error"]
            [[<cons <no-polar $lit> _> !<cons <cons ,lit _> _>]
-            (sat-body (allocate (neg lit) cnf vars alc))]
+            (sat-body (allocate (neg lit) cnf vars alc) lvl)]
            [[<cons $x _> _]
-            (mor (sat-body (allocate x cnf vars alc))
-                 (sat-body (allocate (neg x) cnf vars alc)))]}))]}
-    (lambda [$num-of-var $cnf] (sat-body (preprocess cnf) (take num-of-var nats) {}))))
+            (mor (sat-body (allocate x cnf vars alc) (+ 1 lvl))
+                 (sat-body (allocate (neg x) cnf vars alc) (+ 1 lvl)))]}))]}
+    (lambda [$num-of-var $cnf] (sat-body (preprocess cnf) (take num-of-var nats) {}) 0)))
 
 ; generater of random 3-cnf
 
