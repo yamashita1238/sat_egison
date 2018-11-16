@@ -1,9 +1,5 @@
 ;; to comfirm an allocation
 
-(define $alc-ref
-  (lambda [$alc $var]
-    (if (member? var alc) #t #f)))
-
 (define $variable
   (matcher {[<no-polar $> [nat] {[$tgt {tgt (neg tgt)}]}]
             [,$x [] {[$tgt (if (eq? tgt x) {[]} {})]}]
@@ -21,8 +17,8 @@
 
 (define $eval-literal
   (lambda [$alc $lit]
-    (match lit literal {[<p $var> (alc-ref alc var)]
-                        [<n $var> (not (alc-ref alc var))]})))
+    (match lit literal {[<p $var> (member? var alc)]
+                        [<n $var> (not (member? var alc))]})))
 
 (define $eval-cls
   (lambda [$alc $cls]
