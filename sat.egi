@@ -54,6 +54,28 @@
   (lambda [$cnf]
     (delete-tautology cnf)))
 
+(define $alclit
+  (matcher
+    {[<yet $> [integer] {[<Yet $lit> {lit}]}]
+     [<ald $ $ $> [integer nat nat] {[<Ald $lit $w $lvl> {[lit w lvl]}]}]
+     [$ [eq] {[$tgt {tgt}]}]}))
+
+(define $alclit-of-lit
+  (lambda [$lit]
+    <Yet lit>))
+
+(define $lit-of-alclit
+  (match-lambda alclit {[<yet $lit> lit] [<ald $lit _ _> lit]}))
+
+(define $w-of-ald
+  (match-lambda alclit {[<ald _ $w _> w]}))
+
+(define $lvl-of-ald
+  (match-lambda alclit {[<ald _ _ $lvl> lvl]}))
+
+(define $allocated?
+  (match-lambda alclit {[<yet _> #f] [<ald _ _ _> #t]}))
+
 (define $sat
   (letrec
     {[$sat-body
