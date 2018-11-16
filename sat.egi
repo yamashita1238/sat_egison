@@ -4,32 +4,28 @@
   (lambda [$alc $var]
     (if (member? var alc) <T> <F>)))
 
-(define $neg
+(define $val-neg
   (lambda [$val]
     (match val something {[,<T> <F>] [,<F> <T>]})))
 
 (define $literal
-  (matcher {[<p $> [nat] {[<Pos $x> {x}] [_ {}]}]
-            [<n $> [nat] {[<Neg $x> {x}] [_ {}]}]
+  (matcher {[<p $> [nat] {[$x (if (lt? 0 x) {x} {})]}]
+            [<n $> [nat] {[$x (if (lt? x 0) {(neg x)} {})]}]
             [,$l [] {[$tgt (if (eq? tgt l) {[]} {})]}]
             [$ [something] {[$tgt {tgt}]}]}))
 
 (define $flip-literal
   (lambda [$lit]
-    (match lit literal
-      {[<p $x> <Neg x>]
-       [<n $x> <Pos x>]})))
+    -lit))
 
 (define $var-of-literal
   (lambda [$lit]
-    (match lit literal
-      {[<p $x> x]
-       [<n $x> x]})))
+    (abs lit)))
 
 (define $eval-literal
   (lambda [$alc $lit]
     (match lit literal {[<p $var> (alc-ref alc var)]
-                        [<n $var> (neg (alc-ref alc var))]})))
+                        [<n $var> (val-neg (alc-ref alc var))]})))
 
 (define $eval-cls
   (lambda [$alc $cls]
@@ -52,12 +48,12 @@
 (define $allocate-true
   (lambda [$cnf $var]
     (match-all cnf (set (set literal))
-      [<cons (& $cls !<cons <p ,var> _>) _> (delete <Neg var> cls)])))
+      [<cons (& $cls !<cons <p ,var> _>) _> (delete (neg var) cls)])))
 
 (define $allocate-false
   (lambda [$cnf $var]
     (match-all cnf (set (set literal))
-      [<cons (& $cls !<cons <n ,var> _>) _> (delete <Pos var> cls)])))
+      [<cons (& $cls !<cons <n ,var> _>) _> (delete var cls)])))
 
 (define $delete-literal
   (lambda [$lit $cnf $vars $alc]
@@ -104,10 +100,10 @@
            [[_ <cons <nil> _>] <UNSAT>]
            [[_ <cons <cons $lit <nil>> _>] (sat-body (delete-literal lit cnf vars alc))]
            [[<nil> _] "Error"]
-           [[<cons $x _> !<cons <cons ,<Pos x> _> _>]
-            (sat-body (delete-literal <Neg x> cnf vars alc))]
-           [[<cons $x _> !<cons <cons ,<Neg x> _> _>]
-            (sat-body (delete-literal <Pos x> cnf vars alc))]
+           [[<cons $x _> !<cons <cons ,x _> _>]
+            (sat-body (delete-literal (neg x) cnf vars alc))]
+           [[<cons $x _> !<cons <cons ,(neg x) _> _>]
+            (sat-body (delete-literal x cnf vars alc))]
            [[<cons $x $xs> _]
             (match (sat-body (allocate-true cnf x) xs (cons x alc)) answer
               {[(& <sat _> $ans) ans]
@@ -117,17 +113,12 @@
 ;; sample inputs
 ;; A comment shows a possible allocation
 
-(define $sample-cnf1
-  {{<Pos 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}}) ; 1 = T, 2 = F
-(define $sample-cnf2
-  {{<Pos 1> <Pos 2>} {<Neg 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}}) ; UNSATISFIABLE
-
 (define $random-literal
   (lambda [$num-of-var]
     (let {[$var (pure-rand 1 num-of-var)]}
       (match (pure-rand 1 2) nat
-        {[,1 <Pos var>]
-         [_  <Neg var>]}))))
+        {[,1 var]
+         [_  (neg var)]}))))
 
 (define $random-3cnf
   (lambda [$num-of-var $num-of-cls]
@@ -156,3 +147,32 @@
          (print evl)
          }
       (return)))))
+
+;; parser written by Nishiwaki
+
+(define $read-cnf
+  (lambda [$fn]
+    (io (do {[$port (open-input-file fn)]}
+          (letrec {[$go (lambda [$acc]
+                          (do {[$end? (eof-port? port)]}
+                            (if end?
+                              (return (reverse acc))
+                              (do {[$line (read-line-from-port port)]}
+                                (if (or (eq? (S.car line) c#c)
+                                        (eq? (S.car line) c#p))
+                                  (go acc)
+                                  (go (cons (rdc (map read (filter (lambda [$s] (not (eq? s ""))) (split-string " " line)))) acc)))))))]}
+            (go {}))))))
+
+(define $main
+  (match-lambda (list string)
+    {[<cons $fn _>
+      (let* {[$cnf (read-cnf fn)]
+             [$res (sat cnf)]
+             [$con (match res answer
+                     {[<sat $alc> (match (eval-cnf alc cnf) something
+                                    {[,<T> "OK"]
+                                     [,<F> "NG"]})]
+                      [<unsat> "unsat"]})]}
+        (do {(print (show res))
+             (print con)}))]}))
