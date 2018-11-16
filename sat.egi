@@ -11,10 +11,6 @@
             [,$l [] {[$tgt (if (eq? tgt l) {[]} {})]}]
             [$ [something] {[$tgt {tgt}]}]}))
 
-(define $var-of-literal
-  (lambda [$lit]
-    (abs lit)))
-
 (define $eval-literal
   (lambda [$alc $lit]
     (match lit literal {[<p $var> (member? var alc)]
@@ -57,7 +53,7 @@
 (define $enumerate-vars
   (lambda [$cnf]
     (unique (match-all cnf (multiset (multiset literal))
-      [<cons <cons $lit _> _> (var-of-literal lit)]))))
+      [<cons <cons $lit _> _> (abs lit)]))))
 
 (define $delete-tautology
   (lambda [$cnf]
