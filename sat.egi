@@ -77,19 +77,19 @@
     (unique (match-all cnf (multiset (multiset literal))
       [<cons <cons $lit _> _> (var-of-literal lit)]))))
 
-(define $delete-totology
+(define $delete-tautology
   (lambda [$cnf]
     (match cnf (list (multiset literal))
       {[<cons <cons $lit <cons ,lit $cls>> $tail>
-        (delete-totology (cons (cons lit cls) tail))]
+        (delete-tautology (cons (cons lit cls) tail))]
        [<cons <cons $lit <cons ,(flip-literal lit) _>> $tail>
-              (delete-totology tail)]
-       [<cons $cls $tail> (cons cls (delete-totology tail))]
+              (delete-tautology tail)]
+       [<cons $cls $tail> (cons cls (delete-tautology tail))]
        [<nil> {}]})))
 
 (define $preprocess
   (lambda [$cnf]
-    (delete-totology cnf)))
+    (delete-tautology cnf)))
 
 (define $sat
   (letrec
