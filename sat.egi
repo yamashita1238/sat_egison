@@ -2,11 +2,11 @@
 
 (define $alc-ref
   (lambda [$alc $var]
-    (if (member? var alc) <T> <F>)))
+    (if (member? var alc) #t #f)))
 
 (define $val-neg
   (lambda [$val]
-    (match val something {[,<T> <F>] [,<F> <T>]})))
+    (match val something {[,#t #f] [,#f #t]})))
 
 (define $variable
   (matcher {[<no-polar $> [nat] {[$tgt {tgt (neg tgt)}]}]
@@ -31,18 +31,18 @@
 (define $eval-cls
   (lambda [$alc $cls]
     (match cls (list literal)
-      {[<nil> <F>]
+      {[<nil> #f]
        [<cons $lit $rst> (match (eval-literal alc lit) something
-                           {[,<T> <T>]
-                            [,<F> (eval-cls alc rst)]})]})))
+                           {[,#t #t]
+                            [,#f (eval-cls alc rst)]})]})))
 
 (define $eval-cnf
   (lambda [$alc $cnf]
     (match cnf (list something)
-      {[<nil> <T>]
+      {[<nil> #t]
        [<cons $cls $rst> (match (eval-cls alc cls) something
-                           {[,<T> (eval-cnf alc rst)]
-                            [,<F> <F>]})]})))
+                           {[,#t (eval-cnf alc rst)]
+                            [,#f #f]})]})))
 
 ;; to solve sat problem
 
@@ -127,7 +127,7 @@
            [$res (sat cnf)]
            [$evl (match res answer
                    {[<sat $alc> (match (eval-cnf alc cnf) something
-                                  {[,<T> "OK"]
+                                  {[,#t "OK"]
                                    [,<N> "NG"]})]
                     [<unsat> "cannot confirm"]})]}
     (do {(print "cnf:")
@@ -162,8 +162,8 @@
              [$res (sat cnf)]
              [$con (match res answer
                      {[<sat $alc> (match (eval-cnf alc cnf) something
-                                    {[,<T> "OK"]
-                                     [,<F> "NG"]})]
+                                    {[,#t "OK"]
+                                     [,#f "NG"]})]
                       [<unsat> "unsat"]})]}
         (do {(print (show res))
              (print con)}))]}))
