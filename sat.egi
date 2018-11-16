@@ -103,4 +103,37 @@
 (define $sample-cnf2
   {{<Pos 1> <Pos 2>} {<Neg 1> <Pos 2>} {<Pos 1> <Neg 2>} {<Neg 1> <Neg 2>}}) ; UNSATISFIABLE
 
+(define $random-literal
+  (lambda [$num-of-var]
+    (let {[$var (pure-rand 1 num-of-var)]}
+      (match (pure-rand 1 2) nat
+        {[,1 <Pos var>]
+         [_  <Neg var>]}))))
 
+(define $random-3cnf
+  (lambda [$num-of-var $num-of-cls]
+    (match num-of-cls nat
+      {[<o> {}]
+       [<s $n> 
+        (cons {(random-literal num-of-var)
+               (random-literal num-of-var)
+               (random-literal num-of-var)}
+              (random-3cnf num-of-var n))]})))
+
+(define $test-sat
+  (lambda [$num-of-var $num-of-cls]
+    (let* {[$cnf (random-3cnf num-of-var num-of-cls)]
+           [$res (sat cnf)]
+           [$evl (match res answer
+                   {[<sat $alc> (match (eval-cnf alc cnf) something
+                                  {[,<T> "OK"]
+                                   [,<N> "NG"]})]
+                    [<unsat> "cannot confirm"]})]}
+    (do {(print "cnf:")
+         (print (show cnf))
+         (print "(sat cnf):")
+         (print (show res))
+         (print "confirmation:")
+         (print evl)
+         }
+      (return)))))
