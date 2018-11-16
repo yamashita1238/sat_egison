@@ -48,9 +48,7 @@
 
 (define $delete-literal
   (lambda [$lit $cnf $vars $alc]
-    (match lit literal
-      {[<p $x> [(allocate cnf x) (delete x vars) (cons x alc)]]
-       [<n $x> [(allocate cnf (neg x)) (delete x vars) alc]]})))
+    [(allocate cnf lit) (delete (abs lit) vars) (cons lit alc)]))
 
 (define $answer
   (matcher {[<sat $> [(set nat)] {[<SAT $alc> {[alc]}] [<UNSAT> {}]}]
@@ -67,7 +65,7 @@
     (match cnf (list (multiset literal))
       {[<cons <cons $lit <cons ,lit $cls>> $tail>
         (delete-tautology (cons (cons lit cls) tail))]
-       [<cons <cons $lit <cons ,(flip-literal lit) _>> $tail>
+       [<cons <cons $lit <cons ,(neg lit) _>> $tail>
               (delete-tautology tail)]
        [<cons $cls $tail> (cons cls (delete-tautology tail))]
        [<nil> {}]})))
