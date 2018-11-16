@@ -4,10 +4,6 @@
   (lambda [$alc $var]
     (if (member? var alc) #t #f)))
 
-(define $val-neg
-  (lambda [$val]
-    (match val something {[,#t #f] [,#f #t]})))
-
 (define $variable
   (matcher {[<no-polar $> [nat] {[$tgt {tgt (neg tgt)}]}]
             [,$x [] {[$tgt (if (eq? tgt x) {[]} {})]}]
@@ -26,7 +22,7 @@
 (define $eval-literal
   (lambda [$alc $lit]
     (match lit literal {[<p $var> (alc-ref alc var)]
-                        [<n $var> (val-neg (alc-ref alc var))]})))
+                        [<n $var> (not (alc-ref alc var))]})))
 
 (define $eval-cls
   (lambda [$alc $cls]
