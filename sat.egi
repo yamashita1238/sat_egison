@@ -14,6 +14,12 @@
             [,$l [] {[$tgt (if (eq? tgt l) {[]} {})]}]
             [$ [something] {[$tgt {tgt}]}]}))
 
+(define $flip-literal
+  (lambda [$lit]
+    (match lit literal
+      {[<p $x> <Neg x>]
+       [<n $x> <Pos x>]})))
+
 (define $var-of-literal
   (lambda [$lit]
     (match lit literal
@@ -75,6 +81,18 @@
     (unique (match-all cnf (multiset (multiset literal))
       [<cons <cons $lit _> _> (var-of-literal lit)]))))
 
+(define $delete-totology
+  (lambda [$cls]
+    (match cls (multiset literal)
+      {[<cons $lit <cons ,(flip-literal lit) $tail>> (delete-totology tail)]
+       [<cons $lit <cons ,lit $tail>> (delete-totology (cons lit tail))]
+       [<cons _ _> cls]
+       [<nil> cls]})))
+
+(define $preprocess
+  (lambda [$cnf]
+    (map delete-totology cnf)))
+
 (define $sat
   (letrec
     {[$sat-body
@@ -92,8 +110,7 @@
             (match (sat-body (allocate-true cnf x) xs (cons x alc)) answer
               {[(& <sat _> $ans) ans]
                [<unsat> (sat-body (allocate-false cnf x) xs alc)]})]}))]}
-    (lambda [$cnf] (sat-body cnf (enumerate-vars cnf) {}))))
-  
+    (lambda [$cnf] (sat-body (preprocess cnf) (enumerate-vars cnf) {}))))
 
 ;; sample inputs
 ;; A comment shows a possible allocation
