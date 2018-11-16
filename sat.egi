@@ -46,6 +46,12 @@
 
 ;; to solve sat problem
 
+(define $mor
+  (lambda [$x $y]
+    (match x answer
+      {[<sat _> x]
+       [<unsat> y]})))
+
 (define $allocate-help
   (lambda [$cnf $lit]
     (match-all cnf (set (set literal))
@@ -91,9 +97,8 @@
            [[<cons <no-polar $lit> _> !<cons <cons ,lit _> _>]
             (sat-body (allocate (neg lit) cnf vars alc))]
            [[<cons $x _> _]
-            (match (sat-body (allocate x cnf vars alc)) answer
-              {[(& <sat _> $ans) ans]
-               [<unsat> (sat-body (allocate (neg x) cnf vars alc))]})]}))]}
+            (mor (sat-body (allocate x cnf vars alc))
+                 (sat-body (allocate (neg x) cnf vars alc)))]}))]}
     (lambda [$cnf] (sat-body (preprocess cnf) (enumerate-vars cnf) {}))))
 
 ;; sample inputs
