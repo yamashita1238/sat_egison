@@ -45,21 +45,16 @@
 
 ;; to solve sat problem
 
-(define $allocate-true
-  (lambda [$cnf $var]
+(define $allocate
+  (lambda [$cnf $lit]
     (match-all cnf (set (set literal))
-      [<cons (& $cls !<cons <p ,var> _>) _> (delete (neg var) cls)])))
-
-(define $allocate-false
-  (lambda [$cnf $var]
-    (match-all cnf (set (set literal))
-      [<cons (& $cls !<cons <n ,var> _>) _> (delete var cls)])))
+      [<cons (& $cls !<cons ,lit _>) _> (delete (neg lit) cls)])))
 
 (define $delete-literal
   (lambda [$lit $cnf $vars $alc]
     (match lit literal
-      {[<p $x> [(allocate-true cnf x) (delete x vars) (cons x alc)]]
-       [<n $x> [(allocate-false cnf x) (delete x vars) alc]]})))
+      {[<p $x> [(allocate cnf x) (delete x vars) (cons x alc)]]
+       [<n $x> [(allocate cnf (neg x)) (delete x vars) alc]]})))
 
 (define $answer
   (matcher {[<sat $> [(set nat)] {[<SAT $alc> {[alc]}] [<UNSAT> {}]}]
@@ -99,9 +94,9 @@
            [[<cons $x _> !<cons <cons ,(neg x) _> _>]
             (sat-body (delete-literal x cnf vars alc))]
            [[<cons $x $xs> _]
-            (match (sat-body (allocate-true cnf x) xs (cons x alc)) answer
+            (match (sat-body (allocate cnf x) xs (cons x alc)) answer
               {[(& <sat _> $ans) ans]
-               [<unsat> (sat-body (allocate-false cnf x) xs alc)]})]}))]}
+               [<unsat> (sat-body (allocate cnf (neg x)) xs alc)]})]}))]}
     (lambda [$cnf] (sat-body (preprocess cnf) (enumerate-vars cnf) {}))))
 
 ;; sample inputs
