@@ -82,16 +82,18 @@
       [<cons <cons $lit _> _> (var-of-literal lit)]))))
 
 (define $delete-totology
-  (lambda [$cls]
-    (match cls (multiset literal)
-      {[<cons $lit <cons ,(flip-literal lit) $tail>> (delete-totology tail)]
-       [<cons $lit <cons ,lit $tail>> (delete-totology (cons lit tail))]
-       [<cons _ _> cls]
-       [<nil> cls]})))
+  (lambda [$cnf]
+    (match cnf (list (multiset literal))
+      {[<cons <cons $lit <cons ,lit $cls>> $tail>
+        (delete-totology (cons (cons lit cls) tail))]
+       [<cons <cons $lit <cons ,(flip-literal lit) _>> $tail>
+              (delete-totology tail)]
+       [<cons $cls $tail> (cons cls (delete-totology tail))]
+       [<nil> {}]})))
 
 (define $preprocess
   (lambda [$cnf]
-    (map delete-totology cnf)))
+    (delete-totology cnf)))
 
 (define $sat
   (letrec
