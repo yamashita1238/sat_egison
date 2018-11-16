@@ -8,10 +8,14 @@
   (lambda [$val]
     (match val something {[,<T> <F>] [,<F> <T>]})))
 
+(define $variable
+  (matcher {[<no-polar $> [nat] {[$tgt {tgt (neg tgt)}]}]
+            [,$x [] {[$tgt (if (eq? tgt x) {[]} {})]}]
+            [$ [something] {[$tgt {tgt}]}]}))
+
 (define $literal
   (matcher {[<p $> [nat] {[$x (if (lt? 0 x) {x} {})]}]
             [<n $> [nat] {[$x (if (lt? x 0) {(neg x)} {})]}]
-            [<no-polar $> [integer] {[$x {x (neg x)}]}]
             [,$l [] {[$tgt (if (eq? tgt l) {[]} {})]}]
             [$ [something] {[$tgt {tgt}]}]}))
 
@@ -42,14 +46,14 @@
 
 ;; to solve sat problem
 
-(define $allocate
+(define $allocate-help
   (lambda [$cnf $lit]
     (match-all cnf (set (set literal))
       [<cons (& $cls !<cons ,lit _>) _> (delete (neg lit) cls)])))
 
-(define $delete-literal
+(define $allocate
   (lambda [$lit $cnf $vars $alc]
-    [(allocate cnf lit) (delete (abs lit) vars) (cons lit alc)]))
+    [(allocate-help cnf lit) (delete (abs lit) vars) (cons lit alc)]))
 
 (define $answer
   (matcher {[<sat $> [(set nat)] {[<SAT $alc> {[alc]}] [<UNSAT> {}]}]
@@ -79,17 +83,17 @@
   (letrec
     {[$sat-body
       (lambda [$cnf $vars $alc]
-        (match [vars cnf] [(multiset integer) (multiset (multiset literal))]
+        (match [vars cnf] [(multiset variable) (multiset (multiset literal))]
           {[[_ <nil>] <SAT alc>]
            [[_ <cons <nil> _>] <UNSAT>]
-           [[_ <cons <cons $lit <nil>> _>] (sat-body (delete-literal lit cnf vars alc))]
+           [[_ <cons <cons $lit <nil>> _>] (sat-body (allocate lit cnf vars alc))]
            [[<nil> _] "Error"]
-           [[<cons $x _> !<cons <cons <no-polar ,x> _> _>]
-            (sat-body (delete-literal (neg x) cnf vars alc))]
+           [[<cons <no-polar $lit> _> !<cons <cons ,lit _> _>]
+            (sat-body (allocate (neg lit) cnf vars alc))]
            [[<cons $x $xs> _]
-            (match (sat-body (allocate cnf x) xs (cons x alc)) answer
+            (match (sat-body (allocate-help cnf x) xs (cons x alc)) answer
               {[(& <sat _> $ans) ans]
-               [<unsat> (sat-body (allocate cnf (neg x)) xs (cons (neg x) alc))]})]}))]}
+               [<unsat> (sat-body (allocate-help cnf (neg x)) xs (cons (neg x) alc))]})]}))]}
     (lambda [$cnf] (sat-body (preprocess cnf) (enumerate-vars cnf) {}))))
 
 ;; sample inputs
