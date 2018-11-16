@@ -16,7 +16,7 @@
 
 (define $flip-literal
   (lambda [$lit]
-    -lit))
+    (neg lit)))
 
 (define $var-of-literal
   (lambda [$lit]
