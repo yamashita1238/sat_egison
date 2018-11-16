@@ -90,10 +90,10 @@
            [[<nil> _] "Error"]
            [[<cons <no-polar $lit> _> !<cons <cons ,lit _> _>]
             (sat-body (allocate (neg lit) cnf vars alc))]
-           [[<cons $x $xs> _]
-            (match (sat-body (allocate-help cnf x) xs (cons x alc)) answer
+           [[<cons $x _> _]
+            (match (sat-body (allocate x cnf vars alc)) answer
               {[(& <sat _> $ans) ans]
-               [<unsat> (sat-body (allocate-help cnf (neg x)) xs (cons (neg x) alc))]})]}))]}
+               [<unsat> (sat-body (allocate (neg x) cnf vars alc))]})]}))]}
     (lambda [$cnf] (sat-body (preprocess cnf) (enumerate-vars cnf) {}))))
 
 ;; sample inputs
