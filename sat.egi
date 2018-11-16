@@ -131,9 +131,7 @@
       (let* {[[$num $cnf] (read-cnf fn)]
              [$res (sat num cnf)]
              [$con (match res answer
-                     {[<sat $alc> (match (eval-cnf alc cnf) something
-                                    {[,#t "OK"]
-                                     [,#f "NG"]})]
+                     {[<sat $alc> (if (eval-cnf alc cnf) "OK" "NG")]
                       [<unsat> "unsat"]})]}
         (do {(print (show res))
              (print con)}))]}))
