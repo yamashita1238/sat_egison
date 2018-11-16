@@ -11,6 +11,7 @@
 (define $literal
   (matcher {[<p $> [nat] {[$x (if (lt? 0 x) {x} {})]}]
             [<n $> [nat] {[$x (if (lt? x 0) {(neg x)} {})]}]
+            [<no-polar $> [integer] {[$x {x (neg x)}]}]
             [,$l [] {[$tgt (if (eq? tgt l) {[]} {})]}]
             [$ [something] {[$tgt {tgt}]}]}))
 
@@ -83,10 +84,8 @@
            [[_ <cons <nil> _>] <UNSAT>]
            [[_ <cons <cons $lit <nil>> _>] (sat-body (delete-literal lit cnf vars alc))]
            [[<nil> _] "Error"]
-           [[<cons $x _> !<cons <cons ,x _> _>]
+           [[<cons $x _> !<cons <cons <no-polar ,x> _> _>]
             (sat-body (delete-literal (neg x) cnf vars alc))]
-           [[<cons $x _> !<cons <cons ,(neg x) _> _>]
-            (sat-body (delete-literal x cnf vars alc))]
            [[<cons $x $xs> _]
             (match (sat-body (allocate cnf x) xs (cons x alc)) answer
               {[(& <sat _> $ans) ans]
