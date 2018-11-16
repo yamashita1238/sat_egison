@@ -45,11 +45,8 @@
 
 (define $delete-tautology
   (lambda [$cnf]
-    (match cnf (list (multiset integer))
-      {[<cons <cons $lit <cons ,lit $cls>> $tail>
-        (delete-tautology (cons (cons lit cls) tail))]
-       [<cons <cons $lit <cons ,(neg lit) _>> $tail>
-              (delete-tautology tail)]
+    (match (map unique cnf) (list (multiset integer))
+      {[<cons <cons $lit <cons ,(neg lit) _>> $tail> (delete-tautology tail)]
        [<cons $cls $tail> (cons cls (delete-tautology tail))]
        [<nil> {}]})))
 
