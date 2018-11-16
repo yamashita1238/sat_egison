@@ -89,7 +89,7 @@
            [[<cons $x $xs> _]
             (match (sat-body (allocate cnf x) xs (cons x alc)) answer
               {[(& <sat _> $ans) ans]
-               [<unsat> (sat-body (allocate cnf (neg x)) xs alc)]})]}))]}
+               [<unsat> (sat-body (allocate cnf (neg x)) xs (cons (neg x) alc))]})]}))]}
     (lambda [$cnf] (sat-body (preprocess cnf) (enumerate-vars cnf) {}))))
 
 ;; sample inputs
