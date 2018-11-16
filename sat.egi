@@ -61,12 +61,6 @@
       {[<p $x> [(allocate-true cnf x) (delete x vars) (cons x alc)]]
        [<n $x> [(allocate-false cnf x) (delete x vars) alc]]})))
 
-(define $exist?
-  (lambda [$lit $cnf]
-    (match cnf (multiset (multiset literal))
-      {[<cons <cons ,lit _> _> #t]
-       [_ #f]})))
-
 (define $answer
   (matcher {[<sat $> [(set nat)] {[<SAT $alc> {[alc]}] [<UNSAT> {}]}]
             [<unsat> [] {[<SAT $alc> {}] [<UNSAT> {[]}]}]
