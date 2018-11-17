@@ -34,14 +34,21 @@
       {[<sat _> x]
        [<unsat> y]})))
 
+(define $allocate-cls
+  (lambda [$cls $lit $w $lvl]
+    (match cls (list alclit)
+      {[<cons <yet ,lit> $tail> (cons <Ald lit #t w lvl> (allocate-cls tail lit w lvl))]
+       [<cons <yet ,(neg lit)> $tail> (cons <Ald (neg lit) #f w lvl> (allocate-cls tail lit w lvl))]
+       [<cons $cls $tail> (cons cls (allocate-cls tail lit w lvl))]
+       [<nil> {}]})))
+
 (define $allocate-help
-  (lambda [$cnf $lit]
-    (match-all cnf (set (set integer))
-      [<cons (& $cls !<cons ,lit _>) _> (delete (neg lit) cls)])))
+  (lambda [$cnf $lit $w $lvl]
+    (map (allocate-cls $ lit w lvl) cnf)))
 
 (define $allocate
-  (lambda [$lit $cnf $vars $alc]
-    [(allocate-help cnf lit) (delete (abs lit) vars) (cons lit alc)]))
+  (lambda [$lit $cnf $vars $alc $w $lvl]
+    [(allocate-help cnf lit w lvl) (delete (abs lit) vars) (cons lit alc) lvl]))
 
 (define $delete-tautology
   (lambda [$cnf]
@@ -52,12 +59,12 @@
 
 (define $preprocess
   (lambda [$cnf]
-    (delete-tautology cnf)))
+    (map (map alclit-of-lit $) (delete-tautology cnf))))
 
 (define $alclit
   (matcher
-    {[<yet $> [integer] {[<Yet $lit> {lit}]}]
-     [<ald $ $ $> [integer nat nat] {[<Ald $lit $w $lvl> {[lit w lvl]}]}]
+    {[<yet $> [integer] {[<Yet $lit> {lit}] [<Ald _ _ _ _> {}]}]
+     [<ald $ $ $ $> [integer bool nat nat] {[<Ald $lit $v $w $lvl> {[lit v w lvl]}] [<Yet _> {}]}]
      [$ [eq] {[$tgt {tgt}]}]}))
 
 (define $alclit-of-lit
@@ -65,32 +72,51 @@
     <Yet lit>))
 
 (define $lit-of-alclit
-  (match-lambda alclit {[<yet $lit> lit] [<ald $lit _ _> lit]}))
+  (match-lambda alclit {[<yet $lit> lit] [<ald $lit _ _ _> lit]}))
+
+(define $v-of-ald
+  (match-lambda alclit {[<ald _ $v _ _> v]}))
 
 (define $w-of-ald
-  (match-lambda alclit {[<ald _ $w _> w]}))
+  (match-lambda alclit {[<ald _ _ $w _> w]}))
 
 (define $lvl-of-ald
-  (match-lambda alclit {[<ald _ _ $lvl> lvl]}))
+  (match-lambda alclit {[<ald _ _ _ $lvl> lvl]}))
 
 (define $allocated?
-  (match-lambda alclit {[<yet _> #f] [<ald _ _ _> #t]}))
+  (match-lambda alclit {[<yet _> #f] [<ald _ _ _ _> #t]}))
+
+(define $clause
+  (matcher
+    {[<nil> [] {[$tgt (match tgt (multiset alclit)
+                        {[<cons <ald _ ,#t _ _> _> {}] [<cons <yet _> _> {}] [_ {[]}]})]}]
+     [<cons $ $> [integer clause] {[$tgt (match-all tgt (multiset alclit)
+                                           [<cons <yet $var> $tail> [var tail]])]}]
+     [<satisfied> [] {[$tgt (match tgt (multiset alclit)
+                              {[<cons <ald _ ,#t _ _> _> {[]}] [_ {}]})]}]
+     [$ [eq] {[$tgt {[tgt]}]}]
+     }))
+    
+(define $formula
+  (matcher
+    {[<nil> [] {[$tgt (match tgt (multiset clause) {[!<cons !<satisfied> _> {[]}] [_ {}]})]}]
+     [<cons $ $> [clause formula] {[$tgt (match-all tgt (multiset clause) [<cons (& $cls !<satisfied>) $tail> [cls tail]])]}]
+     [$ [eq] {[$tgt {[tgt]}]}]
+     }))
 
 (define $sat
   (letrec
     {[$sat-body
       (lambda [$cnf $vars $alc $lvl]
-        (match [vars cnf] [(multiset variable) (multiset (multiset integer))]
+        (match [vars cnf] [(multiset variable) formula]
           {[[_ <nil>] <SAT alc>]
            [[_ <cons <nil> _>] <UNSAT>]
-           [[_ <cons <cons $lit <nil>> _>] (sat-body (allocate lit cnf vars alc) lvl)]
-           [[<nil> _] "Error"]
-           [[<cons <no-polar $lit> _> !<cons <cons ,lit _> _>]
-            (sat-body (allocate (neg lit) cnf vars alc) lvl)]
+           [[_ <cons (& $w <cons $lit <nil>>) _>] (sat-body (allocate lit cnf vars alc w lvl))]
+           [[<nil> _] (io (print "Error: sat: no variables"))]
            [[<cons $x _> _]
-            (mor (sat-body (allocate x cnf vars alc) (+ 1 lvl))
-                 (sat-body (allocate (neg x) cnf vars alc) (+ 1 lvl)))]}))]}
-    (lambda [$num-of-var $cnf] (sat-body (preprocess cnf) (take num-of-var nats) {}) 0)))
+            (mor (sat-body (allocate x cnf vars alc #f (+ 1 lvl)))
+                 (sat-body (allocate (neg x) cnf vars alc #f (+ 1 lvl))))]}))]}
+    (lambda [$num-of-var $cnf] (sat-body (preprocess cnf) (take num-of-var nats) {} 0))))
 
 ; generater of random 3-cnf
 
