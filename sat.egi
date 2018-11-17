@@ -79,6 +79,13 @@
 
 (define $w-of-ald
   (match-lambda alclit {[<ald _ _ $w _> w]}))
+(define $deduce
+  (lambda [$cls1 $cls2]
+    (match [cls1 cls2] [clause clause]
+      {[[<lcons $lit $tail1> <lcons ,lit $tail2>] (deduce cls1 tail2)]
+       [[<lcons $lit $tail1> <lcons ,(neg lit) $tail2>] (deduce tail1 tail2)]
+       [[_ _] (append cls1 cls2)]})))
+
 
 (define $lvl-of-ald
   (match-lambda alclit {[<ald _ _ _ $lvl> lvl]}))
