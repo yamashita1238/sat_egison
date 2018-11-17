@@ -37,6 +37,27 @@
      [<ald $ $ $ $> [integer bool clause integer] {[<Ald $lit $v $w $lvl> {[lit v w lvl]}] [<Yet $lit> {}]}]
      [$ [eq] {[$tgt {tgt}]}]}))
 
+(define $clause
+  (matcher
+    {[<nil> [] {[$tgt (match tgt (multiset alclit)
+                        {[<cons <ald _ ,#t _ _> _> {}] [<cons <yet _> _> {}] [_ {[]}]})]}]
+     [<cons $ $> [integer clause] {[$tgt (match-all tgt (multiset alclit)
+                                           [<cons <yet $var> $tail> [var tail]])]}]
+     [<lcons $ $> [integer clause] {[$tgt (match-all tgt (multiset alclit)
+                                            [<cons (| <yet $lit> <ald $lit _ _ _>) $tail> [lit tail]])]}]
+     [<mcons $ $> [alclit clause] {[$tgt (match-all tgt (multiset alclit) [<cons $x $y> [x y]])]}]
+     [<satisfied> [] {[$tgt (match tgt (multiset alclit)
+                              {[<cons <ald _ ,#t _ _> _> {[]}] [_ {}]})]}]
+     [$ [eq] {[$tgt {[tgt]}]}]
+     }))
+
+(define $formula
+  (matcher
+    {[<nil> [] {[$tgt (match tgt (multiset clause) {[!<cons !<satisfied> _> {[]}] [_ {}]})]}]
+     [<cons $ $> [clause formula] {[$tgt (match-all tgt (multiset clause) [<cons (& $cls !<satisfied>) $tail> [cls tail]])]}]
+     [$ [eq] {[$tgt {[tgt]}]}]
+     }))
+
 (define $allocate-cls
   (lambda [$cls $lit $w $lvl]
     (match cls (list alclit)
@@ -65,7 +86,11 @@
     (map (map alclit-of-lit $) (delete-tautology cnf))))
 
 (define $w-of-ald
-  (match-lambda alclit {[<ald _ _ $w _> w]}))
+  (match-lambda alclit {[<ald _ _ $w _> w]
+                        [_ (seq (io (print "Error: w-of-ald: arg must be <Ald _ ...>")) {})]}))
+
+(define $lvl-of-ald
+  (match-lambda alclit {[<ald _ _ _ $lvl> lvl]}))
 
 (define $highest-lvl
   (match-lambda (list alclit)
@@ -97,39 +122,13 @@
                      [$w1 (learn (deduce w1 w))]})]
              [$w2 (learn (deduce w w2))]}))))))
 
-(define $lvl-of-ald
-  (match-lambda alclit {[<ald _ _ _ $lvl> lvl]}))
-
-(define $allocated?
-  (match-lambda alclit {[<yet _> #f] [<ald _ _ _ _> #t]}))
-
-(define $clause
-  (matcher
-    {[<nil> [] {[$tgt (match tgt (multiset alclit)
-                        {[<cons <ald _ ,#t _ _> _> {}] [<cons <yet _> _> {}] [_ {[]}]})]}]
-     [<cons $ $> [integer clause] {[$tgt (match-all tgt (multiset alclit)
-                                           [<cons <yet $var> $tail> [var tail]])]}]
-     [<lcons $ $> [integer clause] {[$tgt (match-all tgt (multiset alclit)
-                                            [<cons (| <yet $lit> <ald $lit _ _ _>) $tail> [lit tail]])]}]
-     [<mcons $ $> [alclit clause] {[$tgt (match-all tgt (multiset alclit) [<cons $x $y> [x y]])]}]
-     [<satisfied> [] {[$tgt (match tgt (multiset alclit)
-                              {[<cons <ald _ ,#t _ _> _> {[]}] [_ {}]})]}]
-     [$ [eq] {[$tgt {[tgt]}]}]
-     }))
-    
-(define $formula
-  (matcher
-    {[<nil> [] {[$tgt (match tgt (multiset clause) {[!<cons !<satisfied> _> {[]}] [_ {}]})]}]
-     [<cons $ $> [clause formula] {[$tgt (match-all tgt (multiset clause) [<cons (& $cls !<satisfied>) $tail> [cls tail]])]}]
-     [$ [eq] {[$tgt {[tgt]}]}]
-     }))
-
 (define $back-jump-cls
   (lambda [$cls $vars $alc $lvl]
     (match cls (list alclit)
       {[<nil> [{} vars alc lvl]]
        [<cons (& $alc0 (| <yet _> <ald _ _ _ ?(lt? $ lvl)>)) $tail>
-        (let {[[$cls1 $vars1 $alc1 $lvl1] (back-jump-cls tail vars alc lvl)]} [(cons alc0 cls1) vars alc1 lvl1])]
+        (let {[[$cls1 $vars1 $alc1 $lvl1] (back-jump-cls tail vars alc lvl)]}
+          [(cons alc0 cls1) vars alc1 lvl1])]
        [<cons <ald $lit _ _ _> $tail>
         (let {[[$cls1 $vars1 $alc1 $lvl1] (back-jump-cls tail vars alc lvl)]
               [$var (abs lit)]}
