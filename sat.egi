@@ -172,8 +172,8 @@
       (lambda [$var $cnf $vars $alc $lvl]
         (match (sat-body (allocate var cnf vars alc #f lvl)) answer
           {[(& $acc <sat _>) acc]
-           [<unsat [$w ?(lt? $ 0)]> (sat-body (back-jump (cat w cnf) vars alc 0))]
-           [<unsat [$w $hl2]> (sat-body (back-jump (cat w cnf) vars alc hl2))]}))]}
+           [<unsat $w ?(lt? $ 0)> (sat-body (back-jump (cons w cnf) vars alc 0))]
+           [<unsat $w $hl2> (sat-body (back-jump (cons w cnf) vars alc hl2))]}))]}
     (lambda [$num-of-var $cnf] (sat-body (preprocess cnf) (take num-of-var nats) {} 0))))
 
 ; generater of random 3-cnf
