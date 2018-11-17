@@ -107,7 +107,7 @@
           (match (w-of-ald snd) clause
             {[,#f (match (w-of-ald fst) clause
                     {[,#f (io (print "Error: learn: There are two variable decided in the same level."))]
-                     [$w1 (learn (deduce w1 snd))]})]
+                     [$w1 (learn (deduce w1 w))]})]
              [$w2 (learn (deduce w w2))]}))))))
 
 (define $lvl-of-ald
