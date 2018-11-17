@@ -32,7 +32,7 @@
   (lambda [$x $y]
     (match x answer
       {[<sat _> x]
-       [<unsat> y]})))
+       [<unsat _> y]})))
 
 (define $allocate-cls
   (lambda [$cls $lit $w $lvl]
@@ -98,6 +98,17 @@
        [[<lcons $lit $tail1> <lcons ,(neg lit) $tail2>] (deduce tail1 tail2)]
        [[_ _] (append cls1 cls2)]})))
 
+(define $learn
+  (lambda [$w]
+    (let* {[[$fst $snd] (highest-lvl w)]
+           [[$hl1 $hl2] [(lvl-of-ald fst) (lvl-of-ald snd)]]}
+      (if (lt? hl1 0) (io (print "Error: learn: There is no allocated literal."))
+        (if (lt? hl2 hl1) [w hl2]
+          (match (w-of-ald snd) clause
+            {[,#f (match (w-of-ald fst) clause
+                    {[,#f (io (print "Error: learn: There are two variable decided in the same level."))]
+                     [$w1 (learn (deduce w1 snd))]})]
+             [$w2 (learn (deduce w w2))]}))))))
 
 (define $lvl-of-ald
   (match-lambda alclit {[<ald _ _ _ $lvl> lvl]}))
@@ -126,18 +137,43 @@
      [$ [eq] {[$tgt {[tgt]}]}]
      }))
 
+(define $back-jump-cls
+  (lambda [$cls $vars $alc $lvl]
+    (match cls (list alclit)
+      {[<nil> [{} vars alc lvl]]
+       [<cons (& $alclit (| <yet _> <ald _ _ _ ?(lt? $ lvl)>)) $tail>
+        (let {[[$cls1 $vars1 $alc1 $lvl1] (back-jump-cls tail vars alc lvl)]} [(cons alclit cls1) vars alc1 lvl1])]
+       [<cons <ald $lit _ _ _> $tail>
+        (let {[[$cls1 $vars1 $alc1 $lvl1] (back-jump-cls tail vars alc lvl)]
+              [$var (abs lit)]}
+          [(cons <Yet lit> cls1)
+           (if (member? var vars1) vars1 (cons (var vars1)))
+           (match-all alc1 (multiset integer) [<cons (& $x !(| ,var ,(neg ver))) _> x])
+           lvl])]})))
+
+(define $back-jump
+  (lambda [$cnf $vars $alc $lvl]
+    (match cnf (list clause)
+      {[<nil> [cnf vars alc lvl]]
+       [<cons $cls $tail> 
+        (mack-jump-cls cls vars alc lvl)]})))
+  
 (define $sat
   (letrec
     {[$sat-body
       (lambda [$cnf $vars $alc $lvl]
         (match [vars cnf] [(multiset variable) formula]
           {[[_ <nil>] <SAT alc>]
-           [[_ <cons (& $w <nil>) _>] <UNSAT w>]
+           [[_ <cons (& $w <nil>) _>] <UNSAT (learn w)>]
            [[_ <cons (& $w <cons $lit <nil>>) _>] (sat-body (allocate lit cnf vars alc w lvl))]
            [[<nil> _] (io (print "Error: sat: no variables"))]
-           [[<cons $x _> _]
-            (mor (sat-body (allocate x cnf vars alc #f (+ 1 lvl)))
-                 (sat-body (allocate (neg x) cnf vars alc #f (+ 1 lvl))))]}))]}
+           [[<cons $x _> _] (branch x cnf vars alc (+ 1 lvl))]}))]
+     [$branch
+      (lambda [$var $cnf $vars $alc $lvl]
+        (match (sat-body (allocate var cnf  vars alc #f lvl)) answer
+          {[(& $acc <sat _>) acc]
+           [<unsat [$w ?(lt? $ 0)]> (sat-body (back-jump (cat w cnf) vars alc 0))]
+           [<unsat [$w $hl2]> (sat-body (back-jump (cat w cnf) vars alc hl2))]}))]}
     (lambda [$num-of-var $cnf] (sat-body (preprocess cnf) (take num-of-var nats) {} 0))))
 
 ; generater of random 3-cnf
