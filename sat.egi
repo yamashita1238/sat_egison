@@ -24,8 +24,8 @@
 ;; to solve sat problem
 
 (define $answer
-  (matcher {[<sat $> [(set nat)] {[<SAT $alc> {[alc]}] [<UNSAT> {}]}]
-            [<unsat> [] {[<SAT $alc> {}] [<UNSAT> {[]}]}]
+  (matcher {[<sat $> [(set nat)] {[<SAT $alc> {[alc]}] [<UNSAT $w> {}]}]
+            [<unsat $> [(multiset alclit)] {[<SAT $alc> {}] [<UNSAT $w> {[w]}]}]
             [$ [something] {[$tgt {[tgt]}]}]}))
 
 (define $mor
@@ -110,7 +110,7 @@
       (lambda [$cnf $vars $alc $lvl]
         (match [vars cnf] [(multiset variable) formula]
           {[[_ <nil>] <SAT alc>]
-           [[_ <cons <nil> _>] <UNSAT>]
+           [[_ <cons (& $w <nil>) _>] <UNSAT w>]
            [[_ <cons (& $w <cons $lit <nil>>) _>] (sat-body (allocate lit cnf vars alc w lvl))]
            [[<nil> _] (io (print "Error: sat: no variables"))]
            [[<cons $x _> _]
@@ -143,7 +143,7 @@
            [$res (sat num-of-var cnf)]
            [$evl (match res answer
                    {[<sat $alc> (if (eval-cnf alc cnf) "OK" "NG")]
-                    [<unsat> "cannot confirm"]})]}
+                    [<unsat _> "cannot confirm"]})]}
     (do {(print "cnf:")
          (print (show cnf))
          (print "(sat cnf):")
