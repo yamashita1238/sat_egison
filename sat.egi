@@ -156,7 +156,9 @@
     (match cnf (list clause)
       {[<nil> [cnf vars alc lvl]]
        [<cons $cls $tail> 
-        (back-jump-cls cls vars alc lvl)]})))
+        (let* {[[$cls1 $vars1 $alc1 $lvl1] (back-jump-cls cls vars alc lvl)]
+               [[$cnf2 $vars2 $alc2 $lvl2] (back-jump tail vars1 alc1 lvl)]}
+          [(cons cls1 cnf2) vars2 alc2 lvl])]})))
   
 (define $sat
   (letrec
