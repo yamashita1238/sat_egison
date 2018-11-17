@@ -144,13 +144,13 @@
   (lambda [$cls $vars $alc $lvl]
     (match cls (list alclit)
       {[<nil> [{} vars alc lvl]]
-       [<cons (& $alclit (| <yet _> <ald _ _ _ ?(lt? $ lvl)>)) $tail>
-        (let {[[$cls1 $vars1 $alc1 $lvl1] (back-jump-cls tail vars alc lvl)]} [(cons alclit cls1) vars alc1 lvl1])]
+       [<cons (& $alc0 (| <yet _> <ald _ _ _ ?(lt? $ lvl)>)) $tail>
+        (let {[[$cls1 $vars1 $alc1 $lvl1] (back-jump-cls tail vars alc lvl)]} [(cons alc0 cls1) vars alc1 lvl1])]
        [<cons <ald $lit _ _ _> $tail>
         (let {[[$cls1 $vars1 $alc1 $lvl1] (back-jump-cls tail vars alc lvl)]
               [$var (abs lit)]}
           [(cons <Yet lit> cls1)
-           (if (member? var vars1) vars1 (cons (var vars1)))
+           (if (member? var vars1) vars1 (cons var vars1))
            (match-all alc1 (multiset integer) [<cons (& $x !(| ,var ,(neg var))) _> x])
            lvl])]})))
 
@@ -177,7 +177,7 @@
       (lambda [$var $cnf $vars $alc $lvl]
         (match (sat-body (allocate var cnf vars alc #f lvl)) answer
           {[(& $acc <sat _>) acc]
-           [<unsat $w ?(lt? $ 0)> (sat-body (debug (back-jump (cons w cnf) vars alc 0)))]
+           [<unsat $w ?(lt? $ 0)> (sat-body (back-jump (cons w cnf) vars alc 0))]
            [<unsat $w $hl2> (sat-body (back-jump (cons w cnf) vars alc hl2))]}))]}
     (lambda [$num-of-var $cnf] (sat-body (preprocess cnf) (take num-of-var nats) {} 0))))
 
