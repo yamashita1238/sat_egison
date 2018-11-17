@@ -151,7 +151,7 @@
               [$var (abs lit)]}
           [(cons <Yet lit> cls1)
            (if (member? var vars1) vars1 (cons (var vars1)))
-           (match-all alc1 (multiset integer) [<cons (& $x !(| ,var ,(neg ver))) _> x])
+           (match-all alc1 (multiset integer) [<cons (& $x !(| ,var ,(neg var))) _> x])
            lvl])]})))
 
 (define $back-jump
@@ -177,7 +177,7 @@
       (lambda [$var $cnf $vars $alc $lvl]
         (match (sat-body (allocate var cnf vars alc #f lvl)) answer
           {[(& $acc <sat _>) acc]
-           [<unsat $w ?(lt? $ 0)> (sat-body (back-jump (cons w cnf) vars alc 0))]
+           [<unsat $w ?(lt? $ 0)> (sat-body (debug (back-jump (cons w cnf) vars alc 0)))]
            [<unsat $w $hl2> (sat-body (back-jump (cons w cnf) vars alc hl2))]}))]}
     (lambda [$num-of-var $cnf] (sat-body (preprocess cnf) (take num-of-var nats) {} 0))))
 
@@ -215,6 +215,9 @@
          (print evl)
          }
       (return)))))
+
+(define $error-case
+  {{3 -2 2} {-2 -1 -2} {3 2 -3} {-3 1 2} {2 -1 -1} {3 3 3} {-2 -1 1} {-3 -1 3} {3 3 -3} {-2 -3 1} {2 -3 -2} {-2 3 3} {-3 2 3}})
 
 ;; parser originally written by Nishiwaki
 
