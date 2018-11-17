@@ -63,8 +63,8 @@
 
 (define $alclit
   (matcher
-    {[<yet $> [integer] {[<Yet $lit> {lit}] [<Ald _ _ _ _> {}]}]
-     [<ald $ $ $ $> [integer bool nat nat] {[<Ald $lit $v $w $lvl> {[lit v w lvl]}] [<Yet _> {}]}]
+    {[<yet $> [integer] {[<Yet $lit> {lit}] [<Ald $lit $v $w $lvl> {}]}]
+     [<ald $ $ $ $> [integer bool clause integer] {[<Ald $lit $v $w $lvl> {[lit v w lvl]}] [<Yet $lit> {}]}]
      [$ [eq] {[$tgt {tgt}]}]}))
 
 (define $alclit-of-lit
@@ -79,6 +79,18 @@
 
 (define $w-of-ald
   (match-lambda alclit {[<ald _ _ $w _> w]}))
+
+(define $highest-lvl
+  (match-lambda (list alclit)
+    {[<nil> [<Ald 0 #f #f -1> <Ald 0 #f #f -2>]]
+     [<cons <yet _> $tail> (highest-lvl tail)]
+     [<cons $alit $tail> 
+      (let* {[$lvl (lvl-of-ald alit)]
+             [[$al1 $al2] (highest-lvl tail)]
+             [$fst (lvl-of-ald al1)]
+             [$snd (lvl-of-ald al2)]}
+        (if (lt? lvl snd) [al1 al2] (if (lt? lvl fst) [al1 alit] [alit al1])))]}))
+          
 (define $deduce
   (lambda [$cls1 $cls2]
     (match [cls1 cls2] [clause clause]
