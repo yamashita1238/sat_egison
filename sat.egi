@@ -7,7 +7,10 @@
 
 (define $eval-literal
   (lambda [$alc $lit]
-    (member? lit alc)))
+    (match [(member? lit alc) (member? (neg lit) alc)] [bool bool] ; to eval (abs lit) as #t when lit is not allocated
+      {[[,#t _] #t]
+       [[,#f ,#t] #f]
+       [[,#f ,#f] #t]})))
 
 (define $eval-cls
   (lambda [$alc $cls]
