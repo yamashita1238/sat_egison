@@ -31,6 +31,12 @@
             [<unsat $ $> [(multiset alclit) integer] {[<SAT $alc> {}] [<UNSAT $w $hl2> {[w hl2]}]}]
             [$ [something] {[$tgt {[tgt]}]}]}))
 
+(define $alclit
+  (matcher
+    {[<yet $> [integer] {[<Yet $lit> {lit}] [<Ald $lit $v $w $lvl> {}]}]
+     [<ald $ $ $ $> [integer bool clause integer] {[<Ald $lit $v $w $lvl> {[lit v w lvl]}] [<Yet $lit> {}]}]
+     [$ [eq] {[$tgt {tgt}]}]}))
+
 (define $allocate-cls
   (lambda [$cls $lit $w $lvl]
     (match cls (list alclit)
@@ -50,25 +56,13 @@
        [<cons $cls $tail> (cons cls (delete-tautology tail))]
        [<nil> {}]})))
 
-(define $preprocess
-  (lambda [$cnf]
-    (map (map alclit-of-lit $) (delete-tautology cnf))))
-
-(define $alclit
-  (matcher
-    {[<yet $> [integer] {[<Yet $lit> {lit}] [<Ald $lit $v $w $lvl> {}]}]
-     [<ald $ $ $ $> [integer bool clause integer] {[<Ald $lit $v $w $lvl> {[lit v w lvl]}] [<Yet $lit> {}]}]
-     [$ [eq] {[$tgt {tgt}]}]}))
-
 (define $alclit-of-lit
   (lambda [$lit]
     <Yet lit>))
 
-(define $lit-of-alclit
-  (match-lambda alclit {[<yet $lit> lit] [<ald $lit _ _ _> lit]}))
-
-(define $v-of-ald
-  (match-lambda alclit {[<ald _ $v _ _> v]}))
+(define $preprocess
+  (lambda [$cnf]
+    (map (map alclit-of-lit $) (delete-tautology cnf))))
 
 (define $w-of-ald
   (match-lambda alclit {[<ald _ _ $w _> w]}))
