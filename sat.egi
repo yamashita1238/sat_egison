@@ -31,12 +31,6 @@
             [<unsat $ $> [(multiset alclit) integer] {[<SAT $alc> {}] [<UNSAT $w $hl2> {[w hl2]}]}]
             [$ [something] {[$tgt {[tgt]}]}]}))
 
-(define $mor
-  (lambda [$x $y]
-    (match x answer
-      {[<sat _> x]
-       [<unsat _> y]})))
-
 (define $allocate-cls
   (lambda [$cls $lit $w $lvl]
     (match cls (list alclit)
