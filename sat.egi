@@ -39,13 +39,9 @@
        [<cons $cls $tail> (cons cls (allocate-cls tail lit w lvl))]
        [<nil> {}]})))
 
-(define $allocate-help
-  (lambda [$cnf $lit $w $lvl]
-    (map (allocate-cls $ lit w lvl) cnf)))
-
 (define $allocate
   (lambda [$lit $cnf $vars $alc $w $lvl]
-    [(allocate-help cnf lit w lvl) (delete (abs lit) vars) (cons lit alc) lvl]))
+    [(map (allocate-cls $ lit w lvl) cnf) (delete (abs lit) vars) (cons lit alc) lvl]))
 
 (define $delete-tautology
   (lambda [$cnf]
