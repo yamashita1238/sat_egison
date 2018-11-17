@@ -92,6 +92,9 @@
                         {[<cons <ald _ ,#t _ _> _> {}] [<cons <yet _> _> {}] [_ {[]}]})]}]
      [<cons $ $> [integer clause] {[$tgt (match-all tgt (multiset alclit)
                                            [<cons <yet $var> $tail> [var tail]])]}]
+     [<lcons $ $> [integer clause] {[$tgt (match-all tgt (multiset alclit)
+                                            [<cons (| <yet $lit> <ald $lit _ _ _>) $tail> [lit tail]])]}]
+     [<mcons $ $> [alclit clause] {[$tgt (match-all tgt (multiset alclit) [<cons $x $y> [x y]])]}]
      [<satisfied> [] {[$tgt (match tgt (multiset alclit)
                               {[<cons <ald _ ,#t _ _> _> {[]}] [_ {}]})]}]
      [$ [eq] {[$tgt {[tgt]}]}]
