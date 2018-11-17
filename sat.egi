@@ -206,7 +206,7 @@
            [$res (sat num-of-var cnf)]
            [$evl (match res answer
                    {[<sat $alc> (if (eval-cnf alc cnf) "OK" "NG")]
-                    [<unsat _> "cannot confirm"]})]}
+                    [<unsat _ _> "cannot confirm"]})]}
     (do {(print "cnf:")
          (print (show cnf))
          (print "(sat cnf):")
