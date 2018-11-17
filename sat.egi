@@ -156,7 +156,7 @@
     (match cnf (list clause)
       {[<nil> [cnf vars alc lvl]]
        [<cons $cls $tail> 
-        (mack-jump-cls cls vars alc lvl)]})))
+        (back-jump-cls cls vars alc lvl)]})))
   
 (define $sat
   (letrec
