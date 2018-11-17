@@ -25,7 +25,7 @@
 
 (define $answer
   (matcher {[<sat $> [(set nat)] {[<SAT $alc> {[alc]}] [<UNSAT $w> {}]}]
-            [<unsat $ $> [(multiset alclit) integer] {[<SAT $alc> {}] [<UNSAT $w $hL2> {[w hL2]}]}]
+            [<unsat $ $> [(multiset alclit) integer] {[<SAT $alc> {}] [<UNSAT $w $hl2> {[w hl2]}]}]
             [$ [something] {[$tgt {[tgt]}]}]}))
 
 (define $mor
