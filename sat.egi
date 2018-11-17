@@ -103,7 +103,7 @@
     (let* {[[$fst $snd] (highest-lvl w)]
            [[$hl1 $hl2] [(lvl-of-ald fst) (lvl-of-ald snd)]]}
       (if (lt? hl1 0) (io (print "Error: learn: There is no allocated literal."))
-        (if (lt? hl2 hl1) [w hl2]
+        (if (lt? hl2 hl1) <UNSAT w hl2>
           (match (w-of-ald snd) clause
             {[,#f (match (w-of-ald fst) clause
                     {[,#f (io (print "Error: learn: There are two variable decided in the same level."))]
@@ -164,13 +164,13 @@
       (lambda [$cnf $vars $alc $lvl]
         (match [vars cnf] [(multiset variable) formula]
           {[[_ <nil>] <SAT alc>]
-           [[_ <cons (& $w <nil>) _>] <UNSAT (learn w)>]
+           [[_ <cons (& $w <nil>) _>] (learn w)]
            [[_ <cons (& $w <cons $lit <nil>>) _>] (sat-body (allocate lit cnf vars alc w lvl))]
            [[<nil> _] (io (print "Error: sat: no variables"))]
            [[<cons $x _> _] (branch x cnf vars alc (+ 1 lvl))]}))]
      [$branch
       (lambda [$var $cnf $vars $alc $lvl]
-        (match (sat-body (allocate var cnf  vars alc #f lvl)) answer
+        (match (sat-body (allocate var cnf vars alc #f lvl)) answer
           {[(& $acc <sat _>) acc]
            [<unsat [$w ?(lt? $ 0)]> (sat-body (back-jump (cat w cnf) vars alc 0))]
            [<unsat [$w $hl2]> (sat-body (back-jump (cat w cnf) vars alc hl2))]}))]}
