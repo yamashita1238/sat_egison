@@ -66,8 +66,8 @@
 
 (define $allc-elm
   (matcher
-    {[<alc $ $ $ $> [variable bool (op clause) (multiset allc-elm)]
-      {[<ALC $var $b $opc $org> {[var b opc org]}]}]}))
+    {[<alc $ $ $> [variable bool (op clause)]
+      {[<ALC $var $b $opc> {[var b opc]}]}]}))
 
 (define $allocation (list (multiset allc-elm)))
 
