@@ -51,8 +51,8 @@
                                             [[_ _] {}]})]}]
      [<nil> [] {[$tgt (match tgt [(multiset literal) (multiset literal)]
                         {[<nil> {[]}] [[_ _] {}]})]}]
-     [<original $> [(multiset literal)] {[$tgt match tgt [(multiset literal) (multiset literal)]
-                                          {[[_ $org] {[org]}]}]}]
+     [<original $> [(multiset literal)] {[$tgt (match tgt [(multiset literal) (multiset literal)]
+                                          {[[_ $org] {[org]}]})]}]
      [$ [eq] {[$tgt {[tgt]}]}]}))
 
 (define $formula (multiset clause))
@@ -74,7 +74,7 @@
 (define $proof
   (matcher
     {[<drv $ $ $> [clause proof proof] {[<DRV $cls $prf1 $prf2> {[cls prf1 prf2]}]}]
-     [<axm $> [clause] <AXM $cls> {[cls]}]})) 
+     [<axm $> [clause] {[<AXM $cls> {[cls]}]}]})) 
 
 (define $answer
   (matcher {[<sat $> [(multiset allc-elm)] {[<SAT $alc> {[alc]}] [<UNSAT $w> {}]}]
@@ -89,33 +89,40 @@
       {[<cons <cons $lit <cons ,(neg lit) _>> $tail> (delete-tautology tail)]
        [_ cnf]})))
 
+(define $duplicate-cls
+  (lambda [$cls] [cls cls]))
+    
 (define $preprocess
-  (lambda [$cnf] (delete-tautology (map unique cnf))))
+  (lambda [$cnf] (map duplicate-cls (delete-tautology (map unique cnf)))))
 
 (define $learn
-  (lambda [$cfl] ))
+  (lambda [$cfl] (err "learn: not defined yet" [])))
 
 (define $allocate
-  (lambda [$lit $db $vars $allc $lvl] ))
+  (lambda [$lit $db $vars $allc $lvl] (err "allocate: not defined yet" [])))
+
+(define $assume
+  (lambda [$x $b $alc]
+    (cons <ALC x b <None>> alc)))
 
 (define $branch
   (lambda [$x $db $vars $alc $lvl]
-    ())
+    (err "branch: not defined yet" [])))
 
 (define $sat-body
   (lambda [$db $vars $allc $lvl]
     (match db cnf-db
-      [<cons <nil> _> <SAT allc>]
-      [<cons <cons (& $cfl <nil>) _> _> <UNSAT <AXM {}>>]
-      [<cons <cons (& $unt <cons $lit <nil>>) <cons <cons ,(neg lit) <nil>> _>> _>
-       
-      [<cons <cons (& $unt <cons $lit <nil>>) _> _> (sat-body (allocate lit db vars allc lvl))]
-      [_ (match vars (multiset variable)
-           {[<cons $x> (branch x db vars alc (+ 1 lvl))]})])))
+      {[<cons <nil> _> <SAT allc>]
+       [<cons <cons (& $cfl <nil>) _> _> <UNSAT <AXM {}>>]
+       [<cons <cons (& $unt <cons $lit <nil>>) <cons <cons ,(neg lit) <nil>> _>> _>
+        (err "sat-body: not defined process" [])]
+       [<cons <cons (& $unt <cons $lit <nil>>) _> _> (sat-body (allocate lit db vars allc lvl))]
+       [_ (match vars (multiset variable)
+           {[<cons $x> (branch x db vars alc (+ 1 lvl))]})]})))
 
 (define $sat
-  (lambda [$num-of-vars $cnf])
-  (sat-body {(preprocess cnf)} (take num-of-vars nats) {} 0))
+  (lambda [$num-of-vars $cnf]
+    (sat-body {(preprocess cnf)} (take num-of-vars nats) {} 0)))
 
 ; generater of random 3-cnf
 
