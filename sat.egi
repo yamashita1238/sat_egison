@@ -46,14 +46,14 @@
 
 (define $clause ; [(multiset literal) (multiset literal)]
   (matcher
-    {[<cons $ $> [literal clause] {[$tgt (match tgt [(multiset literal) (multiset literal)]
-                                           {[[<cons $lit $tail> _] {[lit tail]}]
-                                            [[_ _] {}]})]}]
+    {[<cons $ $> [literal clause] {[$tgt (match-all tgt [(multiset literal) (multiset literal)]
+                                           [[<cons $lit $tail> $org] [lit [tail org]]])]}]
      [<nil> [] {[$tgt (match tgt [(multiset literal) (multiset literal)]
                         {[<nil> {[]}] [[_ _] {}]})]}]
      [<original $> [(multiset literal)] {[$tgt (match tgt [(multiset literal) (multiset literal)]
                                           {[[_ $org] {[org]}]})]}]
-     [$ [eq] {[$tgt {[tgt]}]}]}))
+     [<p $ $> [(multiset literal) (multiset literal)]
+      {[$tgt (match-all tgt [(multiset literal) (multiset literal)] [[$now $org] [now org]])]}]}))
 
 (define $formula (multiset clause))
 (define $level integer)
