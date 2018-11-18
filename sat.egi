@@ -1,3 +1,7 @@
+;; to output error
+(define $err
+  (lambda [$str $acc] (seq (io (print (S.append "Error: " str))) acc)))
+
 ;; to comfirm an allocation
 
 (define $eval-literal
@@ -19,43 +23,88 @@
       {[<nil> #t]
        [<cons $cls $rst> (and (eval-cls alc cls) (eval-cnf alc rst))]})))
 
-;; to solve sat problem
+; to solve sat problem
+
+;; data
+;;; variable : nat = {1, 2, 3, ...}
+;;; literal  : integer
+;;;     A variable and the negation of the variable are both literal
+;;; clause   : collection literal
+;;; formula  : collection clause
+;;; level    : nat0 = {0, 1, 2, ...}
+;;; allocation : collection (collection <ALC variable bool (op clause)>)
+;;; proof    : <DRV clause proof proof> | <AXM clause>
+;;; answer   : <SAT allocation> | <UNSAT proof>
+;;;     <UNSAT p> has a proof of empty clause
+;;; cnf-db   : collection cnf (as list)
 
 (define $variable
   (matcher {[<no-polar $> [nat] {[$tgt {tgt (neg tgt)}]}]
             [$ [eq] {[$tgt {tgt}]}]}))
 
+(define $literal integer)
+(define $clause (multiset literal))
+(define $formula (multiset clause))
+(define $level integer)
+
+(define $op
+  (lambda [$m]
+    (matcher
+      {[<some $> [m] {[<Some $x> {[x]}] [<None> {}]}]
+       [<none> [] {[<None> {[]}] [<Some $x> {}]}]})))
+
+(define $allc-elm
+  (matcher
+    {[<alc $ $ $ $> [variable bool (op clause) (multiset allc-elm)]
+      {[<ALC $var $b $opc $org> {[var b opc org]}]}]}))
+
+(define $allocation (list (multiset allc-elm)))
+
+(define $proof
+  (matcher
+    {[<drv $ $ $> [clause proof proof] {[<DRV $cls $prf1 $prf2> {[cls prf1 prf2]}]}]
+     [<axm $> [clause] <AXM $cls> {[cls]}]})) 
+
 (define $answer
-  (matcher {[<sat $> [(set nat)] {[<SAT $alc> {[alc]}] [<UNSAT $w> {}]}]
-            [<unsat $ $> [(multiset alclit) integer] {[<SAT $alc> {}] [<UNSAT $w $hl2> {[w hl2]}]}]
+  (matcher {[<sat $> [(multiset allc-elm)] {[<SAT $alc> {[alc]}] [<UNSAT $w> {}]}]
+            [<unsat $> [proof] {[<SAT $alc> {}] [<UNSAT $w $hl2> {[w hl2]}]}]
             [$ [eq] {[$tgt {[tgt]}]}]}))
 
-(define $alclit
-  (matcher
-    {[<yet $> [integer] {[<Yet $lit> {lit}] [<Ald $lit $v $w $lvl> {}]}]
-     [<ald $ $ $ $> [integer bool clause integer] {[<Ald $lit $v $w $lvl> {[lit v w lvl]}] [<Yet $lit> {}]}]
-     [$ [eq] {[$tgt {tgt}]}]}))
+(define $cnf-db (list formula))  
 
-(define $clause
-  (matcher
-    {[<nil> [] {[$tgt (match tgt (multiset alclit)
-                        {[<cons <ald _ ,#t _ _> _> {}] [<cons <yet _> _> {}] [_ {[]}]})]}]
-     [<cons $ $> [integer clause] {[$tgt (match-all tgt (multiset alclit)
-                                           [<cons <yet $var> $tail> [var tail]])]}]
-     [<lcons $ $> [integer clause] {[$tgt (match-all tgt (multiset alclit)
-                                            [<cons (| <yet $lit> <ald $lit _ _ _>) $tail> [lit tail]])]}]
-     [<mcons $ $> [alclit clause] {[$tgt (match-all tgt (multiset alclit) [<cons $x $y> [x y]])]}]
-     [<satisfied> [] {[$tgt (match tgt (multiset alclit)
-                              {[<cons <ald _ ,#t _ _> _> {[]}] [_ {}]})]}]
-     [$ [eq] {[$tgt {[tgt]}]}]
-     }))
+(define $delete-tautology
+  (lambda [$cnf]
+    (match cnf formula
+      {[<cons <cons $lit <cons ,(neg lit) _>> $tail> (delete-tautology tail)]
+       [_ cnf]})))
 
-(define $formula
-  (matcher
-    {[<nil> [] {[$tgt (match tgt (multiset clause) {[!<cons !<satisfied> _> {[]}] [_ {}]})]}]
-     [<cons $ $> [clause formula] {[$tgt (match-all tgt (multiset clause) [<cons (& $cls !<satisfied>) $tail> [cls tail]])]}]
-     [$ [eq] {[$tgt {[tgt]}]}]
-     }))
+(define $preprocess
+  (lambda [$cnf] (delete-tautology (map unique cnf))))
+
+(define $learn
+  (lambda [$cfl] ))
+
+(define $allocate
+  (lambda [$lit $db $vars $allc $lvl] ))
+
+(define $branch
+  (lambda [$x $db $vars $alc $lvl]
+    ())
+
+(define $sat-body
+  (lambda [$db $vars $allc $lvl]
+    (match db cnf-db
+      [<cons <nil> _> <SAT allc>]
+      [<cons <cons (& $cfl <nil>) _> _> <UNSAT <AXM {}>>]
+      [<cons <cons (& $unt <cons $lit <nil>>) <cons <cons ,(neg lit) <nil>> _>> _>
+       
+      [<cons <cons (& $unt <cons $lit <nil>>) _> _> (sat-body (allocate lit db vars allc lvl))]
+      [_ (match vars (multiset variable)
+           {[<cons $x> (branch x db vars alc (+ 1 lvl))]})])))
+
+(define $sat
+  (lambda [$num-of-vars $cnf])
+  (sat-body {(preprocess cnf)} (take num-of-vars nats) {} 0))
 
 (define $allocate-cls
   (lambda [$cls $lit $w $lvl]
