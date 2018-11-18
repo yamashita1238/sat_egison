@@ -29,7 +29,7 @@
 ;;; variable : nat = {1, 2, 3, ...}
 ;;; literal  : integer
 ;;;     A variable and the negation of the variable are both literal
-;;; clause   : collection literal
+;;; clause   : collection literal x collection literal (now and original)
 ;;; formula  : collection clause
 ;;; level    : nat0 = {0, 1, 2, ...}
 ;;; allocation : collection (collection <ALC variable bool (op clause)>)
@@ -43,7 +43,18 @@
             [$ [eq] {[$tgt {tgt}]}]}))
 
 (define $literal integer)
-(define $clause (multiset literal))
+
+(define $clause ; [(multiset literal) (multiset literal)]
+  (matcher
+    {[<cons $ $> [literal clause] {[$tgt (match tgt [(multiset literal) (multiset literal)]
+                                           {[[<cons $lit $tail> _] {[lit tail]}]
+                                            [[_ _] {}]})]}]
+     [<nil> [] {[$tgt (match tgt [(multiset literal) (multiset literal)]
+                        {[<nil> {[]}] [[_ _] {}]})]}]
+     [<original $> [(multiset literal)] {[$tgt match tgt [(multiset literal) (multiset literal)]
+                                          {[[_ $org] {[org]}]}]}]
+     [$ [eq] {[$tgt {[tgt]}]}]}))
+
 (define $formula (multiset clause))
 (define $level integer)
 
