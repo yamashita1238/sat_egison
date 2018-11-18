@@ -98,31 +98,43 @@
 (define $learn
   (lambda [$cfl] (err "learn: not defined yet" [])))
 
-(define $allocate
-  (lambda [$lit $db $vars $allc $lvl] (err "allocate: not defined yet" [])))
+(define $derive-cnf
+  (lambda [$x $b $cnf]
+    (let {[$lit (if b x (neg x))]}
+      (match cnf formula
+        {[<nil> {}]
+         [<cons <cons ,lit _> $tail> (derive-cnf x b tail)]
+         [<cons <cons ,(neg lit) $cls> $tail> (cons cls (derive-cnf x b tail))]
+         [<cons $cls $tail> (cons cls (derive-cnf x b tail))]}))))
+
+(define $derive
+  (lambda [$lit $cls $db $allc $vars $lvl]
+    (match [db allc] [cnf-db allocation]
+      {[[<cons $cnf $db-tail> <cons $frm $allc-tail>]
+        [(cons (delive-cnf (abs lit) (lt? 0 lt) cnf) db-tail)
+         (cons (cons <ALC (abs lit) (lt? 0 lt) cls> head) tail)
+         vars lvl]]})))
 
 (define $assume
-  (lambda [$x $b $alc]
-    (cons <ALC x b <None>> alc)))
+  (lambda [$x $b $db $alc]
+    [(cons (delive-cnf x b (cat db)) (cdr db)) (cons {<ALC x b <None>>} alc)]))
 
 (define $branch
   (lambda [$x $db $vars $alc $lvl]
-    (err "branch: not defined yet" [])))
+    (assume x #t db alc)))
 
 (define $sat-body
-  (lambda [$db $vars $allc $lvl]
+  (lambda [$db $allc $vars $lvl]
     (match db cnf-db
       {[<cons <nil> _> <SAT allc>]
-       [<cons <cons (& $cfl <nil>) _> _> <UNSAT <AXM {}>>]
-       [<cons <cons (& $unt <cons $lit <nil>>) <cons <cons ,(neg lit) <nil>> _>> _>
-        (err "sat-body: not defined process" [])]
-       [<cons <cons (& $unt <cons $lit <nil>>) _> _> (sat-body (allocate lit db vars allc lvl))]
+       [<cons <cons (& $cfl <nil>) _> _> <UNSAT (learn cfl)>]
+       [<cons <cons (& $unt <cons $lit <nil>>) _> _> (sat-body (derive lit unit db allc vars lvl))]
        [_ (match vars (multiset variable)
            {[<cons $x> (branch x db vars alc (+ 1 lvl))]})]})))
 
 (define $sat
   (lambda [$num-of-vars $cnf]
-    (sat-body {(preprocess cnf)} (take num-of-vars nats) {} 0)))
+    (sat-body {(preprocess cnf)} {} (take num-of-vars nats) 0)))
 
 ; generater of random 3-cnf
 
