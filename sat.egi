@@ -85,7 +85,7 @@
 
 (define $delete-tautology
   (lambda [$cnf]
-    (match cnf formula
+    (match cnf (multiset (multiset literal))
       {[<cons <cons $lit <cons ,(neg lit) _>> $tail> (delete-tautology tail)]
        [_ cnf]})))
 
