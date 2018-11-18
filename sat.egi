@@ -107,7 +107,7 @@
         {[<nil> {}]
          [<cons <cons ,lit _> $tail> (derive-cnf x b tail)]
          [<cons <cons ,(neg lit) $cls> $tail> (cons cls (derive-cnf x b tail))]
-         [<cons <p $cls $org> $tail> (cons [cls org] (derive-cnf x b tail))]}))))
+         [<cons $cls $tail> (cons cls (derive-cnf x b tail))]}))))
 
 (define $derive
   (lambda [$lit $cls $db $allc $vars $lvl]
