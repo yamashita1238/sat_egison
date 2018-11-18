@@ -66,12 +66,12 @@
       {[<some $> [m] {[<Some $x> {[x]}] [<None> {}]}]
        [<none> [] {[<None> {[]}] [<Some $x> {}]}]})))
 
-(define $allc-elm
+(define $alc-elm
   (matcher
     {[<alc $ $ $> [variable bool (op clause)]
       {[<ALC $var $b $opc> {[var b opc]}]}]}))
 
-(define $allocation (list (multiset allc-elm)))
+(define $allocation (list (multiset alc-elm)))
 
 (define $proof
   (matcher
@@ -79,7 +79,7 @@
      [<axm $> [clause] {[<AXM $cls> {[cls]}]}]})) 
 
 (define $answer
-  (matcher {[<sat $> [(multiset allc-elm)] {[<SAT $alc> {[alc]}] [<UNSAT $w> {}]}]
+  (matcher {[<sat $> [(multiset alc-elm)] {[<SAT $alc> {[alc]}] [<UNSAT $w> {}]}]
             [<unsat $> [proof] {[<SAT $alc> {}] [<UNSAT $w $hl2> {[w hl2]}]}]
             [$ [eq] {[$tgt {[tgt]}]}]}))
 
@@ -98,7 +98,10 @@
   (lambda [$cnf] (map duplicate-cls (delete-tautology (map unique cnf)))))
 
 (define $learn
-  (lambda [$cfl] (err "learn: not defined yet" [])))
+  (lambda [$cfl $alc]
+    (match cfl clause
+      {[<original $org>
+    ))
 
 (define $derive-cnf
   (lambda [$x $b $cnf]
@@ -115,7 +118,8 @@
       {[[<cons $cnf $db-tail> <cons $frm $alc-tail>]
         [(cons (derive-cnf (abs lit) (lt? 0 lit) cnf) db-tail)
          (cons (cons <ALC (abs lit) (lt? 0 lit) cls> frm) alc-tail)
-         vars lvl]]})))
+         (delete (abs lit) vars)
+         lvl]]})))
 
 (define $assume
   (lambda [$x $b $db $alc $vars $lvl]
@@ -131,11 +135,11 @@
        [<unsat $p> (assume x #f db alc vars lvl)]})))
 
 (define $sat-body
-  (lambda [$db $allc $vars $lvl]
+  (lambda [$db $alc $vars $lvl]
     (match db cnf-db
-      {[<cons <nil> _> <SAT allc>]
-       [<cons <cons (& $cfl <nil>) _> _> <UNSAT (learn cfl)>]
-       [<cons <cons (& $unt <cons $lit <nil>>) _> _> (sat-body (derive lit unt db allc vars lvl))]
+      {[<cons <nil> _> <SAT alc>]
+       [<cons <cons (& $cfl <nil>) _> _> <UNSAT (learn cfl alc)>]
+       [<cons <cons (& $unt <cons $lit <nil>>) _> _> (sat-body (derive lit unt db alc vars lvl))]
        [_ (match vars (multiset variable)
            {[<cons $x $xs> (branch x db alc xs lvl)]})]})))
 
