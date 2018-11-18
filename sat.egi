@@ -44,16 +44,18 @@
 
 (define $literal integer)
 
-(define $clause ; [(multiset literal) (multiset literal)]
+(define $clause
   (matcher
-    {[<cons $ $> [literal clause] {[$tgt (match-all tgt [(multiset literal) (multiset literal)]
-                                           [[<cons $lit $tail> $org] [lit [tail org]]])]}]
-     [<nil> [] {[$tgt (match tgt [(multiset literal) (multiset literal)]
-                        {[<nil> {[]}] [[_ _] {}]})]}]
-     [<original $> [(multiset literal)] {[$tgt (match tgt [(multiset literal) (multiset literal)]
-                                          {[[_ $org] {[org]}]})]}]
-     [<p $ $> [(multiset literal) (multiset literal)]
-      {[$tgt (match-all tgt [(multiset literal) (multiset literal)] [[$now $org] [now org]])]}]}))
+    {[<cons $ $> [literal clause]
+      {[<Pair $cur $org> (match-all cur (multiset literal) 
+                           [<cons $lit $tail> [lit <Pair tail org>]])]}]
+     [<nil> []
+      {[<Pair $cur $org> (match-all cur (multiset literal)
+                           [<nil> []])]}]
+     [<original $> [(multiset literal)]
+      {[<Pair $cur $org> {[org]}]}]
+     [$ [something]
+      {[$tgt {[tgt]}]}]}))
 
 (define $formula (multiset clause))
 (define $level integer)
@@ -90,7 +92,7 @@
        [_ cnf]})))
 
 (define $duplicate-cls
-  (lambda [$cls] [cls cls]))
+  (lambda [$cls] <Pair cls cls>))
     
 (define $preprocess
   (lambda [$cnf] (map duplicate-cls (delete-tautology (map unique cnf)))))
@@ -105,7 +107,7 @@
         {[<nil> {}]
          [<cons <cons ,lit _> $tail> (derive-cnf x b tail)]
          [<cons <cons ,(neg lit) $cls> $tail> (cons cls (derive-cnf x b tail))]
-         [<cons $cls $tail> (cons cls (derive-cnf x b tail))]}))))
+         [<cons <p $cls $org> $tail> (cons [cls org] (derive-cnf x b tail))]}))))
 
 (define $derive
   (lambda [$lit $cls $db $allc $vars $lvl]
